@@ -13,7 +13,7 @@ Version:             1.2.0
 Synopsis:            A generic, derivable, haskell pretty printer.
 
 -- A longer description of the package.
-Description: 
+Description:
   GenericPretty is a Haskell library that supports automatic
   derivation of pretty printing functions on user defined data
   types.
@@ -43,13 +43,13 @@ Description:
   .
   For information about the functions exported by the package please see
   the API linked further down this page.
-  
+
   For examples of usage, both basic and more complex see the README file and
   the haskell source code files in the TestSuite folder, both included in the package.
-  
+
   Finally for installation instructions also see the README file or this page:
   <http://www.haskell.org/haskellwiki/Cabal/How_to_install_a_Cabal_package>
-  
+
 -- URL for the project homepage or repository.
 Homepage:            https://github.com/RazvanRanca/GenericPretty
 
@@ -57,7 +57,7 @@ Homepage:            https://github.com/RazvanRanca/GenericPretty
 License:             BSD3
 
 -- The file containing the license text.
-License-file:        LICENSE	
+License-file:        LICENSE
 
 -- The package author(s).
 Author:              Razvan Ranca
@@ -67,7 +67,7 @@ Author:              Razvan Ranca
 Maintainer:          ranca.razvan@gmail.com
 
 -- A copyright notice.
--- Copyright:           
+-- Copyright:
 
 Category:            Text, Generics, Pretty Printer
 
@@ -84,16 +84,16 @@ Cabal-version:       >=1.6
 Library
   -- Modules exported by the library.
   Exposed-modules:     Text.PrettyPrint.GenericPretty
-  
+
   -- Packages needed in order to build this package.
   Build-depends: 	   base >= 3 && < 5, ghc-prim, pretty
   
   -- Modules not exported by this package.
-  -- Other-modules:       
-  
+  -- Other-modules:
+
   -- Extra tools (e.g. alex, hsc2hs, ...) needed to build the source.
-  -- Build-tools: 
-  
+  -- Build-tools:
+
 source-repository head
     type:      git
     location:  git@github.com:RazvanRanca/GenericPretty.git

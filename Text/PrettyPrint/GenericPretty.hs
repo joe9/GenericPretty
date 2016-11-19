@@ -4,21 +4,21 @@
   GenericPretty is a Haskell library that supports automatic
   derivation of pretty printing functions on user defined data
   types.
-	
-	The output provided is a pretty printed version of that provided by
+
+        The output provided is a pretty printed version of that provided by
   'Prelude.show'.  That is, rendering the document provided by this pretty
   printer yields an output identical to that of 'Prelude.show', except
   for extra whitespace.
-		
-	For examples of usage please see the README file included in the package.
-  
-  For more information see the HackageDB project page: <http://hackage.haskell.org/package/GenericPretty> 
+
+        For examples of usage please see the README file included in the package.
+
+  For more information see the HackageDB project page: <http://hackage.haskell.org/package/GenericPretty>
 -}
 
-module Text.PrettyPrint.GenericPretty 
+module Text.PrettyPrint.GenericPretty
                       (
-                      Out(..), 
-                      pp, ppLen, ppStyle, pretty, prettyLen, prettyStyle, fullPP, 
+                      Pretty(..),
+                      pp, ppLen, ppStyle, pretty, prettyLen, prettyStyle, fullPP,
                       Generic,
                       outputIO, outputStr,
                       ) where
