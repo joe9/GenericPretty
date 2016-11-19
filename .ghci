@@ -1,0 +1,6 @@
+:set +r +s +t
+
+:set -XTypeOperators
+:set -XTypeFamilies
+
+import Protolude
