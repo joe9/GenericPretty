@@ -93,6 +93,9 @@ Library
                          , text
                          , string-conversions
                          , QuickCheck
+                         , containers
+                         , unordered-containers
+                         , time
 
   -- use Protolude instead of Prelude
   ghc-options:         -Wall

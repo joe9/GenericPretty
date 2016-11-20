@@ -68,7 +68,9 @@ main = do
 data Animal
   = Dog
   | Cat
-  deriving (Generic, Pretty)
+  | Horse
+  | Elephant
+  deriving (Generic, Pretty, Enum)
 
 ppexpr1 :: Animal -> Text
 ppexpr1 x = PP.displayT (PP.renderPretty 1.0 70 (pretty x))

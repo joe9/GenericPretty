@@ -22,10 +22,16 @@
 module Text.PrettyPrint.GenericPretty
   ( Pretty(..)
   , Generic
+  , displayPretty
   ) where
 
+import qualified Data.HashMap.Strict
+import qualified Data.IntMap
+import qualified Data.Map
 import           Data.String.Conversions      (cs)
-import           Data.Text.Lazy               (Text)
+import qualified Data.Text                    as T
+import           Data.Text.Lazy               (Text, fromStrict)
+import           Data.Time
 import           GHC.Generics
 import           Protolude                    hiding (Text, bool,
                                                (<>))
@@ -109,6 +115,9 @@ instance Pretty Char where
 instance Pretty Text where
   pretty = string
 
+instance Pretty T.Text where
+  pretty = string . fromStrict
+
 instance Pretty Int where
   pretty = int
 
@@ -171,3 +180,23 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) 
   pretty (a, b, c, d, e, f, g) =
     tupled
       [pretty a, pretty b, pretty c, pretty d, pretty e, pretty f, pretty g]
+
+instance (Pretty a, Pretty b) =>
+         Pretty (Data.Map.Map a b) where
+  pretty v = text "fromList " <+> pretty v
+
+instance (Pretty a) =>
+         Pretty (Data.IntMap.IntMap a) where
+  pretty v = text "fromList " <+> pretty v
+
+instance (Pretty a, Pretty b) =>
+         Pretty (Data.HashMap.Strict.HashMap a b) where
+  pretty v = text "fromList " <+> pretty v
+
+instance Pretty UTCTime where
+  pretty = text . cs . formatTime defaultTimeLocale rfc822DateFormat
+
+displayPretty
+  :: Pretty a
+  => a -> Text
+displayPretty = PP.displayT . PP.renderPretty 1.0 70 . pretty
