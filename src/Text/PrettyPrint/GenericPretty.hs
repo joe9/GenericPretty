@@ -24,11 +24,9 @@ module Text.PrettyPrint.GenericPretty
   , Generic
   ) where
 
-import           Data.Char
 import           Data.Monoid
 import           Data.String.Conversions      (cs)
-import           Data.Text.Lazy               (Text, singleton)
-import           Data.Text.Lazy.IO            as TL
+import           Data.Text.Lazy               (Text)
 import           GHC.Generics
 import           Protolude                    hiding (Text, bool,
                                                (<>))
@@ -58,8 +56,7 @@ instance GPretty U1 where
   gpretty _ = Nothing
 
 -- ignore datatype meta-information
-instance (GPretty f, Datatype c) =>
-         GPretty (M1 D c f) where
+instance (GPretty f) => GPretty (M1 D c f) where
   gpretty (M1 a) = gpretty a
 
 -- if there is a selector, display it and it's value + appropriate white space
@@ -95,10 +92,10 @@ instance (Pretty f) =>
 -- output both sides of the product, possible separated by a comma or an infix operator
 instance (GPretty a, GPretty b) =>
          GPretty (a :*: b) where
-  gpretty e@(x :*: y) =
+  gpretty (x :*: y) =
     Just (tupled
-                [((fromMaybe PP.empty . gpretty) x),
-                (fromMaybe PP.empty (gpretty y))])
+                [(fromMaybe PP.empty . gpretty) x,
+                 (fromMaybe PP.empty . gpretty) y])
 
 -- just continue to the corresponding side of the OR
 instance (GPretty a, GPretty b) =>
