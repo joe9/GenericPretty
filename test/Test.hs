@@ -1,20 +1,14 @@
-{-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators     #-}
 
-import           Data.Monoid
-import           Data.Text.Lazy                 (Text)
-import           Data.Text.Lazy.IO              as TL
-import           Protolude                      hiding (Text, (<>))
-import           Text.PrettyPrint.GenericPretty
-import           Text.PrettyPrint.Leijen.Text   hiding (Pretty (..),
-                                                 (<$>), (<>))
-import qualified Text.PrettyPrint.Leijen.Text   as PP
+import           Data.Text.Lazy               (Text)
+import           Data.Text.Lazy.IO            as TL
+import           Protolude                    hiding (Text, (<>))
+import qualified Text.PrettyPrint.Leijen.Text as PP
+
+import Text.PrettyPrint.GenericPretty
 
 data Tree a
   = Leaf a
@@ -66,7 +60,10 @@ main = do
   TL.putStrLn (ppexpr tree2)
   TL.putStrLn (ppexpr tree3)
   TL.putStrLn (ppexpr2 tree4)
-  TL.putStrLn (PP.displayT (PP.renderPretty 1.0 70 (pretty (Just 10 :: Maybe Int))))
+  TL.putStrLn
+    (PP.displayT (PP.renderPretty 1.0 70 (pretty (Just 10 :: Maybe Int))))
+  TL.putStrLn
+    (PP.displayT (PP.renderPretty 1.0 70 (pretty ([10, 20, 30] :: [Int]))))
 
 data Animal
   = Dog

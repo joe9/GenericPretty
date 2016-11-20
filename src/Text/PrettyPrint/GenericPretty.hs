@@ -24,7 +24,6 @@ module Text.PrettyPrint.GenericPretty
   , Generic
   ) where
 
-import           Data.Monoid
 import           Data.String.Conversions      (cs)
 import           Data.Text.Lazy               (Text)
 import           GHC.Generics
@@ -56,7 +55,8 @@ instance GPretty U1 where
   gpretty _ = Nothing
 
 -- ignore datatype meta-information
-instance (GPretty f) => GPretty (M1 D c f) where
+instance (GPretty f) =>
+         GPretty (M1 D c f) where
   gpretty (M1 a) = gpretty a
 
 -- if there is a selector, display it and it's value + appropriate white space
@@ -93,15 +93,18 @@ instance (Pretty f) =>
 instance (GPretty a, GPretty b) =>
          GPretty (a :*: b) where
   gpretty (x :*: y) =
-    Just (tupled
-                [(fromMaybe PP.empty . gpretty) x,
-                 (fromMaybe PP.empty . gpretty) y])
+    Just
+      (tupled
+         [(fromMaybe PP.empty . gpretty) x, (fromMaybe PP.empty . gpretty) y])
 
 -- just continue to the corresponding side of the OR
 instance (GPretty a, GPretty b) =>
          GPretty (a :+: b) where
   gpretty (L1 x) = gpretty x
   gpretty (R1 x) = gpretty x
+
+instance Pretty Char where
+  pretty = char
 
 instance Pretty Text where
   pretty = string
@@ -127,34 +130,44 @@ instance Pretty Bool where
 instance Pretty ByteString where
   pretty = string . cs
 
-instance Pretty a => Pretty (Maybe a) where
-  pretty Nothing = text "Nothing"
+instance Pretty a =>
+         Pretty [a] where
+  pretty = PP.list . fmap pretty
+
+instance Pretty a =>
+         Pretty (Maybe a) where
+  pretty Nothing  = text "Nothing"
   pretty (Just x) = text "Just" <+> pretty x
 
-instance (Pretty a, Pretty b) => Pretty (Either a b) where
-  pretty (Left x) = text "Left"  <+> pretty x
+instance (Pretty a, Pretty b) =>
+         Pretty (Either a b) where
+  pretty (Left x)  = text "Left" <+> pretty x
   pretty (Right y) = text "Right" <+> pretty y
 
-instance (Pretty a, Pretty b) => Pretty (a, b) where
-    pretty (a,b) = parens (sep [pretty a <> comma, pretty b])
+instance (Pretty a, Pretty b) =>
+         Pretty (a, b) where
+  pretty (a, b) = tupled [pretty a, pretty b]
 
-instance (Pretty a, Pretty b, Pretty c) => Pretty (a, b, c) where
-    pretty (a,b,c) = parens (sep [pretty a <> comma, pretty b <> comma, pretty c])
+instance (Pretty a, Pretty b, Pretty c) =>
+         Pretty (a, b, c) where
+  pretty (a, b, c) = tupled [pretty a, pretty b, pretty c]
 
-instance (Pretty a, Pretty b, Pretty c, Pretty d) => Pretty (a, b, c, d) where
-    pretty (a,b,c,d) = parens (sep [pretty a <> comma, pretty b <> comma, pretty c <> comma, pretty d])
+instance (Pretty a, Pretty b, Pretty c, Pretty d) =>
+         Pretty (a, b, c, d) where
+  pretty (a, b, c, d) = tupled [pretty a, pretty b, pretty c, pretty d]
 
-instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) =>    Pretty (a, b, c, d, e) where
-    pretty (a,b,c,d,e) = parens (sep [pretty a <> comma, pretty b <> comma, pretty c <> comma, pretty d <> comma, pretty e])
+instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) =>
+         Pretty (a, b, c, d, e) where
+  pretty (a, b, c, d, e) =
+    tupled [pretty a, pretty b, pretty c, pretty d, pretty e]
 
-instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f)
-        => Pretty (a, b, c, d, e, f) where
-      pretty (a, b, c, d, e, f) =
-        parens (sep [ pretty a <> comma, pretty b <> comma, pretty c <> comma,
-                      pretty d <> comma, pretty e <> comma, pretty f])
+instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) =>
+         Pretty (a, b, c, d, e, f) where
+  pretty (a, b, c, d, e, f) =
+    tupled [pretty a, pretty b, pretty c, pretty d, pretty e, pretty f]
 
-instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g)
-        => Pretty (a, b, c, d, e, f, g) where
-      pretty (a, b, c, d, e, f, g) =
-        parens (sep [ pretty a <> comma, pretty b <> comma, pretty c <> comma,
-                      pretty d <> comma, pretty e <> comma, pretty f <> comma, pretty g])
+instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) =>
+         Pretty (a, b, c, d, e, f, g) where
+  pretty (a, b, c, d, e, f, g) =
+    tupled
+      [pretty a, pretty b, pretty c, pretty d, pretty e, pretty f, pretty g]

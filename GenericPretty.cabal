@@ -86,7 +86,13 @@ Library
   Exposed-modules:     Text.PrettyPrint.GenericPretty
 
   -- Packages needed in order to build this package.
-  Build-depends:           base >= 3 && < 5, ghc-prim, wl-pprint-text, protolude, text, string-conversions
+  Build-depends:           base >= 3 && < 5
+                         , ghc-prim
+                         , wl-pprint-text
+                         , protolude
+                         , text
+                         , string-conversions
+                         , QuickCheck
 
   -- use Protolude instead of Prelude
   ghc-options:         -Wall

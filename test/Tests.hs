@@ -1,46 +1,61 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-{- Tests.hs has a number of different custom data types. All of them implement 'Out' and 'Arbitrary'.
+{- Tests.hs has a number of different custom data types. All of them implement 'Pretty' and 'Arbitrary'.
 Properties are provided for each that specify that the output given by 'pretty' and that given
-by 'show' should be identical except for the whitespace 
+by 'show' should be identical except for the whitespace
 
 The different data types follow the same pattern of implementation and functions, so most of the
 functions are only commented for the first data type -}
 
 import Text.PrettyPrint.GenericPretty
 import Test.QuickCheck
+import Data.String.Conversions
 import Control.Monad
 import Data.Maybe
 import Text.Printf
+import           Data.Text.Lazy               (Text)
+import           Data.Text.Lazy.IO            as TL
+import           Protolude                    hiding (Text, (<>))
+import           GHC.Base (String)
+import qualified Text.PrettyPrint.Leijen.Text as PP
+
+import Text.PrettyPrint.GenericPretty
+
 
 -- used to make pretty printed and show output identical for comparing purposes
 removeSpaces :: String -> String
 removeSpaces [] = []
 removeSpaces (x:xs)
-  | x `elem` " \n" = removeSpaces xs
+  | x `elem` ( " \n" :: [Char]) = removeSpaces xs
   | otherwise = x : removeSpaces xs
-  
+
 -- checks the output of a specific value
-checkOutput :: (Out a, Show a) => a -> Bool
-checkOutput a = removeSpaces (pretty a) == removeSpaces (show a)
+checkPrettyput :: (Pretty a, Show a) => a -> Bool
+checkPrettyput a = removeSpaces (render a) == removeSpaces (show a)
+  where render = cs . PP.displayT . PP.renderOneLine . pretty
 
 -- Finite State Machine Type
 data FSM q = FSMCons ([q], Alphabet, q, [q], [Transition q]) deriving (Show, Generic)
 type Alphabet = String
 type Transition q = (q, Char, q)
 
--- implement 'Out' so we can pretty print
-instance (Out a) => Out (FSM a)
+-- implement 'Pretty' so we can pretty print
+instance (Pretty a) => Pretty (FSM a)
 
 --implementation needed for quickCheck generation of random values
 instance Arbitrary a => Arbitrary (FSM a) where
-	arbitrary = liftM FSMCons arbitrary
+        arbitrary = liftM FSMCons arbitrary
 
--- check wether 'Maybe Int' FSM's are outputed the same via pretty and show (modulo the whitespace) 
+-- check wether 'Maybe Int' FSM's are outputed the same via pretty and show (modulo the whitespace)
 checkFSM :: FSM (Maybe Int) -> FSM (Maybe Int) -> Bool
-checkFSM _ a = removeSpaces (pretty a) == removeSpaces (show a)
+checkFSM _ a = removeSpaces (render a) == removeSpaces (show a)
+  where render = cs . PP.displayT . PP.renderOneLine . pretty
 
--- example of an FSM, you can check the output of this manually with 'checkOutput'
+-- example of an FSM, you can check the output of this manually with 'checkPrettyput'
 f :: FSM Int
 f = FSMCons([0,1,2,3,4],
       "ab",
@@ -49,38 +64,39 @@ f = FSMCons([0,1,2,3,4],
       [(0,'a',1), (0,'b',1), (0,'a',2), (0,'b',2),
        (1,'b',4), (2,'a',3), (2,'b',3), (3,'b',4),
        (4,'a',4), (4,'b',4)])
-	   
--- Binary Tree data type
-data BinaryTree a = EmptyBTree | BNode a (BinaryTree a) (BinaryTree a) deriving (Show, Generic)  
 
-instance (Out a) => Out (BinaryTree a)
+-- Binary Tree data type
+data BinaryTree a = EmptyBTree | BNode a (BinaryTree a) (BinaryTree a) deriving (Show, Generic)
+
+instance (Pretty a) => Pretty (BinaryTree a)
 
 instance (Arbitrary a) => Arbitrary (BinaryTree a) where
-	arbitrary = sized arbitTree
-		where 
-			arbitTree 0 = return EmptyBTree
-			arbitTree n 
-				| n>0 = oneof [return EmptyBTree, liftM3 BNode arbitrary subTree subTree]
-				| otherwise = error "tree size should never be < 0"
-				where
-					subTree = arbitTree (n `div` 2)
+        arbitrary = sized arbitTree
+                where
+                        arbitTree 0 = return EmptyBTree
+                        arbitTree n
+                                | n>0 = oneof [return EmptyBTree, liftM3 BNode arbitrary subTree subTree]
+                                | otherwise = error "tree size should never be < 0"
+                                where
+                                        subTree = arbitTree (n `div` 2)
 
 checkBinaryTree :: BinaryTree Char -> BinaryTree Char -> Bool
-checkBinaryTree _ a = removeSpaces (pretty a) == removeSpaces (show a)
+checkBinaryTree _ a = removeSpaces (render a) == removeSpaces (show a)
+  where render = cs . PP.displayT . PP.renderOneLine . pretty
 
--- functions for the construction of BinaryTrees					
-singleton :: a -> BinaryTree a  
-singleton x = BNode x EmptyBTree EmptyBTree  
-      
-treeInsert :: (Ord a) => a -> BinaryTree a -> BinaryTree a  
-treeInsert x EmptyBTree = singleton x  
-treeInsert x (BNode a left right)   
-    | x == a = BNode x left right  
-    | x < a  = BNode a (treeInsert x left) right  
-    | x > a  = BNode a left (treeInsert x right)  
+-- functions for the construction of BinaryTrees
+singleton :: a -> BinaryTree a
+singleton x = BNode x EmptyBTree EmptyBTree
+
+treeInsert :: (Ord a) => a -> BinaryTree a -> BinaryTree a
+treeInsert x EmptyBTree = singleton x
+treeInsert x (BNode a left right)
+    | x == a = BNode x left right
+    | x < a  = BNode a (treeInsert x left) right
+    | x > a  = BNode a left (treeInsert x right)
 
 nums :: [Int]
-nums = [55555,99999,22222,77777,88888,11111,33333,44444,66666]  
+nums = [55555,99999,22222,77777,88888,11111,33333,44444,66666]
 
 -- mkBTree takes a list and creates a BinaryTree docPrec of it
 mkBTree :: (Ord a) => [a] -> BinaryTree a
@@ -91,87 +107,90 @@ bt :: BinaryTree Int
 bt = mkBTree nums
 
 -- Tree using record syntax
-data RecordTree a = RNode {val :: a, children :: [RecordTree a]} deriving (Show, Generic)  
+data RecordTree a = RNode {val :: a, children :: [RecordTree a]} deriving (Show, Generic)
 
-instance (Out a) => Out (RecordTree a)
+instance (Pretty a) => Pretty (RecordTree a)
 
 instance (Arbitrary a) => Arbitrary (RecordTree a) where
-	arbitrary = sized arbitTree
-		where
-			arbitTree 0 = liftM2 RNode arbitrary (return [])
-			arbitTree n 
-				| n>0 = liftM2 RNode arbitrary childList
-				| otherwise = error "tree size should never be < 0"
-				where
-					childList = resize (floor.sqrt.fromIntegral $ n) (listOf (arbitTree (n`div` 2)) )
+        arbitrary = sized arbitTree
+                where
+                        arbitTree 0 = liftM2 RNode arbitrary (return [])
+                        arbitTree n
+                                | n>0 = liftM2 RNode arbitrary childList
+                                | otherwise = error "tree size should never be < 0"
+                                where
+                                        childList = resize (floor.sqrt.fromIntegral $ n) (listOf (arbitTree (n`div` 2)) )
 
 checkRecordTree :: RecordTree String -> RecordTree String -> Bool
-checkRecordTree _ a = removeSpaces (pretty a) == removeSpaces (show a)
-					
+checkRecordTree _ a = removeSpaces (render a) == removeSpaces (show a)
+  where render = cs . PP.displayT . PP.renderOneLine . pretty
+
 rt :: RecordTree Int
 rt = RNode (-656565) [RNode 33344 [], RNode 98789 [RNode (-766444) [], RNode 454545 [], RNode 59996 []]]
 
 infixr 5 :*:
 infixr 3 :+:
 -- tree using infix notation
-data InfixTree a = ILeaf a a | (InfixTree a) :*: (InfixTree a) | (InfixTree a) :+: (InfixTree a) 
-		deriving (Show, Generic)  
-		
-instance (Out a) => Out (InfixTree a)
+data InfixTree a = ILeaf a a | (InfixTree a) :*: (InfixTree a) | (InfixTree a) :+: (InfixTree a)
+                deriving (Show, Generic)
+
+instance (Pretty a) => Pretty (InfixTree a)
 
 instance (Arbitrary a) => Arbitrary (InfixTree a) where
-	arbitrary = sized arbitTree
-		where
-			arbitTree 0 = liftM2 ILeaf arbitrary arbitrary
-			arbitTree n 
-				| n>0 = oneof [ liftM2 (:*:) subTree subTree, liftM2 (:+:) subTree subTree]
-				| otherwise = error "tree size should never be < 0"
-				where
-					subTree = arbitTree (n `div` 2)
+        arbitrary = sized arbitTree
+                where
+                        arbitTree 0 = liftM2 ILeaf arbitrary arbitrary
+                        arbitTree n
+                                | n>0 = oneof [ liftM2 (:*:) subTree subTree, liftM2 (:+:) subTree subTree]
+                                | otherwise = error "tree size should never be < 0"
+                                where
+                                        subTree = arbitTree (n `div` 2)
 
 nt :: InfixTree Int
-nt = ILeaf 5454544 55 :*: (ILeaf 5375738 44 :+: ((ILeaf 699879 55 :*: ILeaf 2332323 66 :+: ILeaf 676765 77) 
-		:*: ILeaf 99999 88) ) :+: ILeaf 555 666
+nt = ILeaf 5454544 55 :*: (ILeaf 5375738 44 :+: ((ILeaf 699879 55 :*: ILeaf 2332323 66 :+: ILeaf 676765 77)
+                :*: ILeaf 99999 88) ) :+: ILeaf 555 666
 
 checkInfixTree :: InfixTree (Either Int Char) -> InfixTree (Either Int Char) -> Bool
-checkInfixTree _ a = removeSpaces (pretty a) == removeSpaces (show a)
-	
+checkInfixTree _ a = removeSpaces (render a) == removeSpaces (show a)
+  where render = cs . PP.displayT . PP.renderOneLine . pretty
+
 infixr 5 :^:
 -- infix and record tree, also uses a second user defined type in it's definition, 'Wrap'
-data InfixRecordTree a = IRLeaf (Wrap a) | (:^:) {left :: InfixRecordTree a, right :: InfixRecordTree a} 
-			deriving (Show, Generic)  
-			
-instance (Out a) => Out (InfixRecordTree a)
-	
+data InfixRecordTree a = IRLeaf (Wrap a) | (:^:) {left :: InfixRecordTree a, right :: InfixRecordTree a}
+                        deriving (Show, Generic)
+
+instance (Pretty a) => Pretty (InfixRecordTree a)
+
 instance (Arbitrary a) => Arbitrary (InfixRecordTree a) where
-	arbitrary = sized arbitTree
-	  where
-		arbitTree 0 = liftM IRLeaf arbitrary
-		arbitTree n
-			| n>0 = liftM2 (:^:) subTree subTree
-			| otherwise = error "tree size should never be < 0"
-			  where
-				subTree = arbitTree (n `div` 2)
-				
+        arbitrary = sized arbitTree
+          where
+                arbitTree 0 = liftM IRLeaf arbitrary
+                arbitTree n
+                        | n>0 = liftM2 (:^:) subTree subTree
+                        | otherwise = error "tree size should never be < 0"
+                          where
+                                subTree = arbitTree (n `div` 2)
+
 irt :: InfixRecordTree Int
-irt = IRLeaf  (Wrap 5454544) :^: (IRLeaf (Wrap (-5375738)) :^: ((IRLeaf  (Wrap 699879) :^: 
-		(IRLeaf (Wrap (-2332323)) :^: IRLeaf (Wrap 676765))) :^: IRLeaf (Wrap 99999)))
+irt = IRLeaf  (Wrap 5454544) :^: (IRLeaf (Wrap (-5375738)) :^: ((IRLeaf  (Wrap 699879) :^:
+                (IRLeaf (Wrap (-2332323)) :^: IRLeaf (Wrap 676765))) :^: IRLeaf (Wrap 99999)))
 
 checkInfixRecordTree :: InfixRecordTree Float -> InfixRecordTree Float -> Bool
-checkInfixRecordTree _ a = removeSpaces (pretty a) == removeSpaces (show a)
-	
+checkInfixRecordTree _ a = removeSpaces (render a) == removeSpaces (show a)
+  where render = cs . PP.displayT . PP.renderOneLine . pretty
+
 -- just a very simple user defined type that is used in IRTree
 data Wrap a = Wrap a deriving (Show, Generic)
 
-instance Out a => Out (Wrap a)
-	
+instance Pretty a => Pretty (Wrap a)
+
 instance Arbitrary a => Arbitrary (Wrap a) where
-	arbitrary = liftM Wrap arbitrary
-	
+        arbitrary = liftM Wrap arbitrary
+
 allTests = [	("FSM (Maybe Int)", quickCheck checkFSM),
-				("BinaryTree (Char)", quickCheck checkBinaryTree),
-				("RecordTree (String)", quickCheck checkRecordTree),
-				("InfixTree (Either Int Char)", quickCheck checkInfixTree),
-				("InfixRecordTree (Float)", quickCheck checkInfixRecordTree)]
-				
-main = mapM_ (\(s,r) -> printf "%-30s: " s >> r) allTests			
+                                ("BinaryTree (Char)", quickCheck checkBinaryTree),
+                                ("RecordTree (String)", quickCheck checkRecordTree),
+                                ("InfixTree (Either Int Char)", quickCheck checkInfixTree),
+                                ("InfixRecordTree (Float)", quickCheck checkInfixRecordTree)]
+
+main = mapM_ (\(s,r) -> printf "%-30s: " (s :: Text) >> r) allTests
