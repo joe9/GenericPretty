@@ -1,9 +1,10 @@
-{-# LANGUAGE DefaultSignatures #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE DefaultSignatures     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeOperators         #-}
 
 {-|
   GenericPretty is a Haskell library that supports automatic
@@ -28,9 +29,9 @@ module Text.PrettyPrint.GenericPretty
 
 import qualified Data.HashMap.Strict
 import qualified Data.IntMap
+import           Data.IxSet.Typed             (Indexable)
+import qualified Data.IxSet.Typed
 import qualified Data.Map
-import           qualified Data.IxSet.Typed
-import           Data.IxSet.Typed (Indexable)
 import           Data.String.Conversions      (cs)
 import qualified Data.Text                    as T
 import           Data.Text.Lazy               (Text, fromStrict)
@@ -199,7 +200,8 @@ instance (Pretty a, Pretty b) =>
 instance Pretty UTCTime where
   pretty = text . cs . formatTime defaultTimeLocale rfc822DateFormat
 
-instance (Show a, Indexable ixs a) => Pretty (Data.IxSet.Typed.IxSet ixs a) where
+instance (Show a, Indexable ixs a) =>
+         Pretty (Data.IxSet.Typed.IxSet ixs a) where
   pretty = text . show
 
 instance Pretty Word where
@@ -207,19 +209,25 @@ instance Pretty Word where
 
 instance Pretty Word8 where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
+
 instance Pretty Word16 where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
+
 instance Pretty Word32 where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
+
 instance Pretty Word64 where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
 
 instance Pretty Int8 where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
+
 instance Pretty Int16 where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
+
 instance Pretty Int32 where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
+
 instance Pretty Int64 where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
 
