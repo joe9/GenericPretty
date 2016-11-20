@@ -64,6 +64,10 @@ main = do
     (PP.displayT (PP.renderPretty 1.0 70 (pretty (Just 10 :: Maybe Int))))
   TL.putStrLn
     (PP.displayT (PP.renderPretty 1.0 70 (pretty ([10, 20, 30] :: [Int]))))
+  TL.putStrLn (ppexpr3 animal1)
+
+animal1 :: Animal1
+animal1 = Animal1 10 "junk animal" "junk animal again"
 
 data Animal
   = Dog
@@ -74,3 +78,9 @@ data Animal
 
 ppexpr1 :: Animal -> Text
 ppexpr1 x = PP.displayT (PP.renderPretty 1.0 70 (pretty x))
+
+data Animal1 = Animal1 {aType :: Int , aName :: Text, aNameAgain :: Text}
+  deriving (Show, Generic, Pretty)
+
+ppexpr3 :: Animal1 -> Text
+ppexpr3 x = PP.displayT (PP.renderPretty 1.0 70 (pretty x))

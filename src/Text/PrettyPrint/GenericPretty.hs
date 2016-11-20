@@ -91,7 +91,8 @@ instance (GPretty f, Constructor c) =>
   gpretty c@(M1 a) =
     maybe
       ((Just . string . cs . conName) c)
-      (\d -> Just ((string . cs . conName) c <+> string "=" <+> d))
+--       (\d -> Just ((string . cs . conName) c <+> string "=" <+> d))
+      (\d -> Just ((string . cs . conName) c <+> d))
       (gpretty a)
 
 -- ignore tagging, call docPrec since these are concrete types
@@ -102,10 +103,14 @@ instance (Pretty f) =>
 -- output both sides of the product, possible separated by a comma or an infix operator
 instance (GPretty a, GPretty b) =>
          GPretty (a :*: b) where
-  gpretty (x :*: y) =
-    Just
-      (tupled
-         [(fromMaybe PP.empty . gpretty) x, (fromMaybe PP.empty . gpretty) y])
+  gpretty = Just . encloseSep lbrace rbrace comma . catMaybes . prettyArgument
+
+-- prettyArgument :: [Doc] -> GPretty (a :*: b) -> [Doc]
+-- prettyArgument xs (x :*: y) =
+--   prettyArgument (xs ++ [gpretty x]) y
+-- prettyArgument xs x = xs ++ [gpretty x]
+prettyArgument (x :*: y) = (gpretty x) : prettyArgument y
+prettyArgument x = [gpretty x]
 
 -- just continue to the corresponding side of the OR
 instance (GPretty a, GPretty b) =>
