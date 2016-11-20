@@ -22,12 +22,15 @@
 module Text.PrettyPrint.GenericPretty
   ( Pretty(..)
   , Generic
+  , displayPrettyL
   , displayPretty
   ) where
 
 import qualified Data.HashMap.Strict
 import qualified Data.IntMap
 import qualified Data.Map
+import           qualified Data.IxSet.Typed
+import           Data.IxSet.Typed (Indexable)
 import           Data.String.Conversions      (cs)
 import qualified Data.Text                    as T
 import           Data.Text.Lazy               (Text, fromStrict)
@@ -196,7 +199,36 @@ instance (Pretty a, Pretty b) =>
 instance Pretty UTCTime where
   pretty = text . cs . formatTime defaultTimeLocale rfc822DateFormat
 
-displayPretty
+instance (Show a, Indexable ixs a) => Pretty (Data.IxSet.Typed.IxSet ixs a) where
+  pretty = text . show
+
+instance Pretty Word where
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+
+instance Pretty Word8 where
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+instance Pretty Word16 where
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+instance Pretty Word32 where
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+instance Pretty Word64 where
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+
+instance Pretty Int8 where
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+instance Pretty Int16 where
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+instance Pretty Int32 where
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+instance Pretty Int64 where
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+
+displayPrettyL
   :: Pretty a
   => a -> Text
-displayPretty = PP.displayT . PP.renderPretty 1.0 70 . pretty
+displayPrettyL = PP.displayT . PP.renderPretty 1.0 70 . pretty
+
+displayPretty
+  :: Pretty a
+  => a -> T.Text
+displayPretty = toStrict . displayPrettyL
