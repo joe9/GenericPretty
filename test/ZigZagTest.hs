@@ -5,7 +5,7 @@
 
 import Protolude
 import Data.Text.IO hiding (putStrLn)
-import Text.PrettyPrint
+import Text.PrettyPrint.Leijen.Text
 import Data.String.Conversions
 import Text.Groom
 import Text.PrettyPrint.GenericPretty

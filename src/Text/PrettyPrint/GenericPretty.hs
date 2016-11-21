@@ -2,6 +2,8 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeOperators     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 {-|
   GenericPretty is a Haskell library that supports automatic
@@ -25,17 +27,24 @@ module Text.PrettyPrint.GenericPretty
   , pretty
   , prettyLen
   , prettyStyle
-  , fullPP
+--   , fullPP
   , Generic
-  , outputIO
-  , outputStr
+--   , outputIO
+--   , outputStr
   ) where
 
+import Protolude hiding ((<>), Text, Type, empty)
+import qualified Data.Monoid as Monoid
 import Data.Char
-import Data.List
+import Safe
+import Data.List (last)
+import Data.Text.Lazy (Text)
+-- import Data.Text.Lazy.IO
 import GHC.Generics
-import Text.PrettyPrint
+import Text.PrettyPrint.Leijen.Text
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Lazy.IO as LT
 import Data.String.Conversions (cs)
 
 -- | The class 'Out' is the equivalent of 'Prelude.Show'
@@ -121,33 +130,33 @@ class Out a
 
 -- used to define docList, creates output identical to that of show for general list types
 docListWith :: (a -> Doc) -> [a] -> Doc
-docListWith f = brackets . fcat . punctuate comma . map f
+docListWith f = brackets . fillCat . punctuate comma . map f
 
 -- returns a list without it's first and last elements
 -- except if the list has a single element, in which case it returns the list unchanged
 middle :: [a] -> [a]
 middle []     = []
 middle [x]    = [x]
-middle (x:xs) = init xs
+middle (x:xs) = initDef [] xs
 
 -- |Utility function used to wrap the passed value in parens if the bool is true.
 wrapParens :: Bool -> [Doc] -> [Doc]
 wrapParens _ [] = []
 wrapParens False s = s
 wrapParens True s
-  | length s == 1 = [lparen <> head s <> rparen]
-  | otherwise = [lparen <> head s] ++ middle s ++ [last s <> rparen]
+  | length s == 1 = [lparen <> (fromMaybe empty . head) s <> rparen]
+  | otherwise = [lparen <> (fromMaybe empty . head) s] ++ middle s ++ [last s <> rparen]
 
 -- show the whole document in one line
-showDocOneLine :: Doc -> String
-showDocOneLine = fullRender OneLineMode 1 1 outputStr ""
+showDocOneLine :: Doc -> Text
+showDocOneLine = displayT . renderOneLine
 
 -- The types of data we need to consider for product operator. Record, Prefix and Infix.
 -- Tuples aren't considered since they're already instances of 'Out' and thus won't pass through that code.
 data Type
   = Rec
   | Pref
-  | Inf String
+  | Inf Text
 
 --'GOut' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
 -- so can't be an instance of 'Out'
@@ -179,12 +188,11 @@ instance (GOut f, Datatype c) =>
 instance (GOut f, Selector c) =>
          GOut (M1 S c f) where
   out1 s@(M1 a) t d p
-    | selector == "" = out1 a t d p
-    | otherwise =
-      (text selector <+> char '=') :
-      map (nest $ length selector + 3) (out1 a t 0 p)
+    | LT.null selector = out1 a t d p
+    | otherwise = (string selector <+> char '=') :
+                         map (nest $ (fromIntegral . LT.length) selector + 3) (out1 a t 0 p)
     where
-      selector = selName s
+      selector = (cs . selName) s
   isNullary (M1 a) = isNullary a
 
 -- constructor
@@ -202,7 +210,7 @@ instance (GOut f, Constructor c) =>
       Infix _ m -> wrapParens (d > m) $ out1 a t (m + 1) (d > m)
     where
       boolParens = d > 10 && (not $ isNullary a)
-      name = checkInfix $ conName c
+      name = checkInfix . cs $ conName c
       fixity = conFixity c
       -- get the type of the data, Record, Infix or Prefix.
       t =
@@ -210,29 +218,33 @@ instance (GOut f, Constructor c) =>
           then Rec
           else case fixity of
                  Prefix    -> Pref
-                 Infix _ _ -> Inf (conName c)
+                 Infix _ _ -> (Inf . cs . conName) c
       --add whitespace and possible braces for records
       makeMargins :: Type -> Bool -> [Doc] -> [Doc]
       makeMargins _ _ [] = []
       makeMargins Rec b s
-        | length s == 1 = [nest (length name + 1) (lbrace <> head s <> rbrace)]
+        | length s == 1 = [nest ((fromIntegral . LT.length) name + 1) (lbrace <> (fromMaybe empty . head) s <> rbrace)]
         | otherwise =
-          nest (length name + 1) (lbrace <> head s) :
-          map (nest $ length name + 2) (middle s ++ [last s <> rbrace])
+            nest ((fromIntegral . LT.length) name + 1)
+                 (lbrace <> (fromMaybe empty (head s))) :
+            map (nest $ (fromIntegral . LT.length) name + 2)
+                 (middle s ++ [last s <> rbrace])
       makeMargins _ b s =
         map
           (nest $
-           length name +
+           ((fromIntegral . LT.length) name) +
            if b
              then 2
              else 1)
           s
       -- check for infix operators that are acting like prefix ones due to records, put them in parens
-      checkInfix :: String -> String
-      checkInfix [] = []
-      checkInfix (x:xs)
-        | fixity == Prefix && (isAlphaNum x || x == '_') = (x : xs)
-        | otherwise = "(" ++ (x : xs) ++ ")"
+      checkInfix :: Text -> Text
+      checkInfix xs
+        | xs == LT.empty = LT.empty
+        | otherwise = let x = LT.head xs
+                      in if fixity == Prefix && (isAlphaNum x || x == '_')
+                           then xs
+                           else "(" Monoid.<> xs Monoid.<> ")"
   isNullary (M1 a) = isNullary a
 
 -- ignore tagging, call docPrec since these are concrete types
@@ -252,13 +264,13 @@ instance (GOut f, GOut g) =>
 -- output both sides of the product, possible separated by a comma or an infix operator
 instance (GOut f, GOut g) =>
          GOut (f :*: g) where
-  out1 (f :*: g) t@Rec d p = init pfn ++ [last pfn <> comma] ++ pgn
+  out1 (f :*: g) t@Rec d p = initDef [] pfn ++ [last pfn <> comma] ++ pgn
     where
       pfn = out1 f t d p
       pgn = out1 g t d p
   -- if infix, nest the second value since it isn't nested in the constructor
   out1 (f :*: g) t@(Inf s) d p =
-    init pfn ++ [last pfn <+> text s] ++ checkIndent pgn
+    initDef [] pfn ++ [last pfn <+> text s] ++ checkIndent pgn
     where
       pfn = out1 f t d p
       pgn = out1 g t d p
@@ -272,61 +284,58 @@ instance (GOut f, GOut g) =>
           if p
             then map (nest 1) m
             else m
-        | otherwise = map (nest $ cons + 1 + parenSpace) m
+        | otherwise = map (nest $ fromIntegral cons + 1 + parenSpace) m
         where
           parenSpace =
             if p
               then 1
               else 0
           strG = showDocOneLine x
-          strF = showDocOneLine (head pfn)
-          parens = length $ takeWhile (== '(') strG
-          cons = length $ takeWhile (/= ' ') (dropWhile (== '(') strF)
+          cons = maybe 0
+                   (LT.length . LT.takeWhile (/= ' ') . LT.dropWhile (== '(') . showDocOneLine ) (head pfn)
+          parens = LT.length $ LT.takeWhile (== '(') strG
   out1 (f :*: g) t@Pref n p = out1 f t n p ++ out1 g t n p
   isNullary _ = False
 
 -- | 'fullPP' is a fully customizable Pretty Printer
 --
 -- Every other pretty printer just gives some default values to 'fullPP'
-fullPP
-  :: (Out a)
-  => (TextDetails -> b -> b) -- ^Function that handles the text conversion /(eg: 'outputIO')/
-  -> b -- ^The end element of the result /( eg: "" or putChar('\n') )/
-  -> Style -- ^The pretty printing 'Text.PrettyPrint.MyPretty.Style' to use
-  -> a -- ^The value to pretty print
-  -> b -- ^The pretty printed result
-fullPP td end s a =
-  fullRender (mode s) (lineLength s) (ribbonsPerLine s) td end doc
-  where
-    doc = docPrec 0 a
-
-defaultStyle :: Style
-defaultStyle = Style {mode = PageMode, lineLength = 80, ribbonsPerLine = 1.5}
+-- fullPP
+--   :: (Out a)
+--   => (TextDetails -> b -> b) -- ^Function that handles the text conversion /(eg: 'outputIO')/
+--   -> b -- ^The end element of the result /( eg: "" or putChar('\n') )/
+--   -> Style -- ^The pretty printing 'Text.PrettyPrint.MyPretty.Style' to use
+--   -> a -- ^The value to pretty print
+--   -> b -- ^The pretty printed result
+-- fullPP td end s a =
+--   fullRender (mode s) (lineLength s) (ribbonsPerLine s) td end doc
+--   where
+--     doc = docPrec 0 a
 
 -- | Utility function that handles the text conversion for 'fullPP'.
 --
 -- 'outputIO' transforms the text into 'String's and outputs it directly.
-outputIO :: TextDetails -> IO () -> IO ()
-outputIO td act = do
-  putStr $ decode td
-  act
-  where
-    decode :: TextDetails -> String
-    decode (Str s)   = s
-    decode (PStr s1) = s1
-    decode (Chr c)   = [c]
+-- outputIO :: TextDetails -> IO () -> IO ()
+-- outputIO td act = do
+--   putStr $ decode td
+--   act
+--   where
+--     decode :: TextDetails -> String
+--     decode (Str s)   = s
+--     decode (PStr s1) = s1
+--     decode (Chr c)   = [c]
 
 -- | Utility function that handles the text conversion for 'fullPP'.
 --
 --'outputStr' just leaves the text as a 'String' which is usefull if you want
 -- to further process the pretty printed result.
-outputStr :: TextDetails -> String -> String
-outputStr td str = decode td ++ str
-  where
-    decode :: TextDetails -> String
-    decode (Str s)   = s
-    decode (PStr s1) = s1
-    decode (Chr c)   = [c]
+-- outputStr :: TextDetails -> String -> String
+-- outputStr td str = decode td ++ str
+--   where
+--     decode :: TextDetails -> String
+--     decode (Str s)   = s
+--     decode (PStr s1) = s1
+--     decode (Chr c)   = [c]
 
 -- | Customizable pretty printer
 --
@@ -336,8 +345,8 @@ outputStr td str = decode td ++ str
 -- > fullPP outputStr ""
 prettyStyle
   :: (Out a)
-  => Style -> a -> String
-prettyStyle = fullPP outputStr ""
+  => Int -> a -> Text
+prettyStyle l = displayT . renderPretty 1.0 l . doc
 
 -- | Semi-customizable pretty printer.
 --
@@ -348,10 +357,8 @@ prettyStyle = fullPP outputStr ""
 -- Where customStyle uses the specified line length, mode = PageMode and ribbonsPerLine = 1.
 prettyLen
   :: (Out a)
-  => Int -> a -> String
-prettyLen l = prettyStyle customStyle
-  where
-    customStyle = Style {mode = PageMode, lineLength = l, ribbonsPerLine = 1}
+  => Int -> a -> Text
+prettyLen l = displayT . renderPretty 1.0 l . doc
 
 -- | The default pretty printer returning 'String's
 --
@@ -360,10 +367,20 @@ prettyLen l = prettyStyle customStyle
 -- > prettyStyle defaultStyle
 --
 -- Where defaultStyle = (mode=PageMode, lineLength=80, ribbonsPerLine=1.5)
-pretty
-  :: (Out a)
-  => a -> String
-pretty = prettyStyle defaultStyle
+-- pretty
+--   :: (Out a)
+--   => a -> Text
+-- pretty = displayT . renderPretty 1.0 80 . doc
+
+displayPrettyL
+  :: Out a
+  => a -> Text
+displayPrettyL = displayT . renderPretty 1.0 70 . doc -- pretty
+
+displayPretty
+  :: Out a
+  => a -> T.Text
+displayPretty = toStrict . displayPrettyL
 
 -- | Customizable pretty printer.
 --
@@ -373,8 +390,8 @@ pretty = prettyStyle defaultStyle
 -- > fullPP outputIO (putChar '\n')
 ppStyle
   :: (Out a)
-  => Style -> a -> IO ()
-ppStyle = fullPP outputIO (putChar '\n')
+  => Float -> Int -> a -> IO ()
+ppStyle r l = LT.putStrLn . displayT . renderPretty r l . doc
 
 -- | Semi-customizable pretty printer.
 --
@@ -386,9 +403,7 @@ ppStyle = fullPP outputIO (putChar '\n')
 ppLen
   :: (Out a)
   => Int -> a -> IO ()
-ppLen l = ppStyle customStyle
-  where
-    customStyle = Style {mode = PageMode, lineLength = l, ribbonsPerLine = 1}
+ppLen l = LT.putStrLn . displayT . renderPretty 1 l . doc
 
 -- | The default Pretty Printer,
 --
@@ -400,7 +415,7 @@ ppLen l = ppStyle customStyle
 pp
   :: (Out a)
   => a -> IO ()
-pp = ppStyle defaultStyle
+pp = putDoc . doc
 
 -- define some instances of Out making sure to generate output identical to 'show' modulo the extra whitespace
 instance Out () where
@@ -408,9 +423,9 @@ instance Out () where
   docPrec _ = doc
 
 instance Out Char where
-  doc a = char '\'' <> (text . middle . show $ a) <> char '\''
+  doc a = char '\'' <> (text . LT.singleton $ a) <> char '\''
   docPrec _ = doc
-  docList xs = text $ show xs
+  docList = text . cs
 
 instance Out Int where
   docPrec n x
@@ -468,12 +483,12 @@ instance (Out a, Out b) =>
     | n /= 0 = parens result
     | otherwise = result
     where
-      result = text "Left" <+> docPrec 10 x
+      result = string "Left" <+> docPrec 10 x
   docPrec n (Right y)
     | n /= 0 = parens result
     | otherwise = result
     where
-      result = text "Right" <+> docPrec 10 y
+      result = string "Right" <+> docPrec 10 y
   doc = docPrec 0
 
 instance (Out a, Out b) =>
@@ -529,7 +544,7 @@ instance (Out a, Out b, Out c, Out d, Out e, Out f, Out g) =>
          ])
   docPrec _ = doc
 
-instance Out T.Text where
+instance Out LT.Text where
   doc = text . cs
   docPrec _ = doc
   docList = doc

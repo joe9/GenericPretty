@@ -98,7 +98,7 @@ Library
                          , time
                          , ixset-typed
                          , groom
-                         , pretty
+                         , safe
 
   -- use Protolude instead of Prelude
   ghc-options:         -Wall
