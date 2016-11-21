@@ -558,6 +558,11 @@ instance Pretty LT.Text where
   prettyPrec _ = pretty
   prettyList = pretty
 
+instance Pretty T.Text where
+  pretty = string . fromStrict
+  prettyPrec _ = pretty
+  prettyList = pretty
+
 instance (Pretty a, Pretty b) =>
          Pretty (Data.Map.Map a b) where
   pretty v = text "fromList " <+> pretty v
