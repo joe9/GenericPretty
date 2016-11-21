@@ -131,7 +131,7 @@ docListWith f = brackets . fillCat . punctuate comma . map f
 middle :: [a] -> [a]
 middle []     = []
 middle [x]    = [x]
-middle (x:xs) = initDef [] xs
+middle (_:xs) = initDef [] xs
 
 -- |Utility function used to wrap the passed value in parens if the bool is true.
 wrapParens :: Bool -> [Doc] -> [Doc]
@@ -173,8 +173,7 @@ instance GPretty U1 where
   isNullary _ = True
 
 -- ignore datatype meta-information
-instance (GPretty f, Datatype c) =>
-         GPretty (M1 D c f) where
+instance (GPretty f) => GPretty (M1 D c f) where
   out1 (M1 a) = out1 a
   isNullary (M1 a) = isNullary a
 
@@ -193,7 +192,7 @@ instance (GPretty f, Selector c) =>
 -- here the real type and parens flag is set and propagated forward via t and n, the precedence factor is updated
 instance (GPretty f, Constructor c) =>
          GPretty (M1 C c f) where
-  out1 c@(M1 a) _ d p =
+  out1 c@(M1 a) _ d _ =
     case fixity
          -- if prefix add the constructor name, nest the result and possibly put it in parens
           of
@@ -216,7 +215,7 @@ instance (GPretty f, Constructor c) =>
       --add whitespace and possible braces for records
       makeMargins :: Type -> Bool -> [Doc] -> [Doc]
       makeMargins _ _ [] = []
-      makeMargins Rec b s
+      makeMargins Rec _ s
         | length s == 1 = [nest ((fromIntegral . LT.length) name + 1) (lbrace <> (fromMaybe empty . head) s <> rbrace)]
         | otherwise =
             nest ((fromIntegral . LT.length) name + 1)
@@ -273,8 +272,8 @@ instance (GPretty f, GPretty g) =>
       -- to be able to determine the correct indentation
       checkIndent :: [Doc] -> [Doc]
       checkIndent [] = []
-      checkIndent m@(x:xs)
-        | parens == 0 =
+      checkIndent m@(x:_)
+        | parensLength == 0 =
           if p
             then map (nest 1) m
             else m
@@ -287,7 +286,7 @@ instance (GPretty f, GPretty g) =>
           strG = showDocOneLine x
           cons = maybe 0
                    (LT.length . LT.takeWhile (/= ' ') . LT.dropWhile (== '(') . showDocOneLine ) (head pfn)
-          parens = LT.length $ LT.takeWhile (== '(') strG
+          parensLength = LT.length $ LT.takeWhile (== '(') strG
   out1 (f :*: g) t@Pref n p = out1 f t n p ++ out1 g t n p
   isNullary _ = False
 
@@ -463,7 +462,7 @@ instance Pretty Bool where
 
 instance Pretty a =>
          Pretty (Maybe a) where
-  docPrec n Nothing = text "Nothing"
+  docPrec _ Nothing = text "Nothing"
   docPrec n (Just x)
     | n /= 0 = parens result
     | otherwise = result
