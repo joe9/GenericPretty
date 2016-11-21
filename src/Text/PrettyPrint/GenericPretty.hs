@@ -1,9 +1,9 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeOperators     #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeOperators     #-}
 
 {-|
   GenericPretty is a Haskell library that supports automatic
@@ -28,18 +28,18 @@ module Text.PrettyPrint.GenericPretty
   , displayPrettyL
   ) where
 
-import Protolude hiding ((<>), Text, Type, empty)
-import qualified Data.Monoid as Monoid
-import Data.Char
-import Data.List (last)
-import Data.Text.Lazy (Text)
--- import Data.Text.Lazy.IO
-import GHC.Generics
-import Text.PrettyPrint.Leijen.Text hiding (Pretty)
-import qualified Data.Text as T
-import qualified Data.Text.Lazy as LT
-import qualified Data.Text.Lazy.IO as LT
-import Data.String.Conversions (cs)
+import           Data.Char
+import           Data.List                    (last)
+import qualified Data.Monoid                  as Monoid
+import           Data.String.Conversions      (cs)
+import qualified Data.Text                    as T
+import           Data.Text.Lazy               (Text)
+import qualified Data.Text.Lazy               as LT
+import qualified Data.Text.Lazy.IO            as LT
+import           GHC.Generics
+import           Protolude                    hiding (Text, Type,
+                                               empty, (<>))
+import           Text.PrettyPrint.Leijen.Text hiding (Pretty)
 
 -- | The class 'Pretty' is the equivalent of 'Prelude.Show'
 --
@@ -139,7 +139,8 @@ wrapParens _ [] = []
 wrapParens False s = s
 wrapParens True s
   | length s == 1 = [lparen <> (fromMaybe empty . head) s <> rparen]
-  | otherwise = [lparen <> (fromMaybe empty . head) s] ++ middle s ++ [last s <> rparen]
+  | otherwise =
+    [lparen <> (fromMaybe empty . head) s] ++ middle s ++ [last s <> rparen]
 
 -- show the whole document in one line
 showDocOneLine :: Doc -> Text
@@ -173,7 +174,8 @@ instance GPretty U1 where
   isNullary _ = True
 
 -- ignore datatype meta-information
-instance (GPretty f) => GPretty (M1 D c f) where
+instance (GPretty f) =>
+         GPretty (M1 D c f) where
   out1 (M1 a) = out1 a
   isNullary (M1 a) = isNullary a
 
@@ -182,8 +184,9 @@ instance (GPretty f, Selector c) =>
          GPretty (M1 S c f) where
   out1 s@(M1 a) t d p
     | LT.null selector = out1 a t d p
-    | otherwise = (string selector <+> char '=') :
-                         map (nest $ (fromIntegral . LT.length) selector + 3) (out1 a t 0 p)
+    | otherwise =
+      (string selector <+> char '=') :
+      map (nest $ (fromIntegral . LT.length) selector + 3) (out1 a t 0 p)
     where
       selector = (cs . selName) s
   isNullary (M1 a) = isNullary a
@@ -216,12 +219,18 @@ instance (GPretty f, Constructor c) =>
       makeMargins :: Type -> Bool -> [Doc] -> [Doc]
       makeMargins _ _ [] = []
       makeMargins Rec _ s
-        | length s == 1 = [nest ((fromIntegral . LT.length) name + 1) (lbrace <> (fromMaybe empty . head) s <> rbrace)]
+        | length s == 1 =
+          [ nest
+              ((fromIntegral . LT.length) name + 1)
+              (lbrace <> (fromMaybe empty . head) s <> rbrace)
+          ]
         | otherwise =
-            nest ((fromIntegral . LT.length) name + 1)
-                 (lbrace <> (fromMaybe empty (head s))) :
-            map (nest $ (fromIntegral . LT.length) name + 2)
-                 (middle s ++ [last s <> rbrace])
+          nest
+            ((fromIntegral . LT.length) name + 1)
+            (lbrace <> (fromMaybe empty (head s))) :
+          map
+            (nest $ (fromIntegral . LT.length) name + 2)
+            (middle s ++ [last s <> rbrace])
       makeMargins _ b s =
         map
           (nest $
@@ -234,10 +243,11 @@ instance (GPretty f, Constructor c) =>
       checkInfix :: Text -> Text
       checkInfix xs
         | xs == LT.empty = LT.empty
-        | otherwise = let x = LT.head xs
-                      in if fixity == Prefix && (isAlphaNum x || x == '_')
-                           then xs
-                           else "(" Monoid.<> xs Monoid.<> ")"
+        | otherwise =
+          let x = LT.head xs
+          in if fixity == Prefix && (isAlphaNum x || x == '_')
+               then xs
+               else "(" Monoid.<> xs Monoid.<> ")"
   isNullary (M1 a) = isNullary a
 
 -- ignore tagging, call docPrec since these are concrete types
@@ -284,8 +294,12 @@ instance (GPretty f, GPretty g) =>
               then 1
               else 0
           strG = showDocOneLine x
-          cons = maybe 0
-                   (LT.length . LT.takeWhile (/= ' ') . LT.dropWhile (== '(') . showDocOneLine ) (head pfn)
+          cons =
+            maybe
+              0
+              (LT.length .
+               LT.takeWhile (/= ' ') . LT.dropWhile (== '(') . showDocOneLine)
+              (head pfn)
           parensLength = LT.length $ LT.takeWhile (== '(') strG
   out1 (f :*: g) t@Pref n p = out1 f t n p ++ out1 g t n p
   isNullary _ = False
@@ -304,7 +318,6 @@ instance (GPretty f, GPretty g) =>
 --   fullRender (mode s) (lineLength s) (ribbonsPerLine s) td end doc
 --   where
 --     doc = docPrec 0 a
-
 -- | Utility function that handles the text conversion for 'fullPP'.
 --
 -- 'outputIO' transforms the text into 'String's and outputs it directly.
@@ -317,7 +330,6 @@ instance (GPretty f, GPretty g) =>
 --     decode (Str s)   = s
 --     decode (PStr s1) = s1
 --     decode (Chr c)   = [c]
-
 -- | Utility function that handles the text conversion for 'fullPP'.
 --
 --'outputStr' just leaves the text as a 'String' which is usefull if you want
@@ -329,7 +341,6 @@ instance (GPretty f, GPretty g) =>
 --     decode (Str s)   = s
 --     decode (PStr s1) = s1
 --     decode (Chr c)   = [c]
-
 -- | Customizable pretty printer
 --
 -- Takes a user defined 'Text.PrettyPrint.MyPretty.Style' as a parameter and uses 'outputStr' to obtain the result
@@ -364,7 +375,6 @@ prettyLen l = displayT . renderPretty 1.0 l . doc
 --   :: (Pretty a)
 --   => a -> Text
 -- pretty = displayT . renderPretty 1.0 80 . doc
-
 displayPrettyL
   :: Pretty a
   => a -> Text
