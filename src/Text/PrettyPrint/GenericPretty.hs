@@ -40,6 +40,12 @@ import           GHC.Generics
 import           Protolude                    hiding (Text, Type,
                                                empty, (<>))
 import           Text.PrettyPrint.Leijen.Text hiding (Pretty)
+import           Data.IxSet.Typed             (Indexable)
+import qualified Data.Map
+import           Data.Time
+import qualified Data.HashMap.Strict
+import qualified Data.IntMap
+import qualified Data.IxSet.Typed
 
 -- | The class 'Pretty' is the equivalent of 'Prelude.Show'
 --
@@ -551,3 +557,63 @@ instance Pretty LT.Text where
   doc = string
   docPrec _ = doc
   docList = doc
+
+instance (Pretty a, Pretty b) =>
+         Pretty (Data.Map.Map a b) where
+  doc v = text "fromList " <+> doc v
+  docPrec _ = doc
+
+instance (Pretty a) =>
+         Pretty (Data.IntMap.IntMap a) where
+  doc v = text "fromList " <+> doc v
+  docPrec _ = doc
+
+instance (Pretty a, Pretty b) =>
+         Pretty (Data.HashMap.Strict.HashMap a b) where
+  doc v = text "fromList " <+> doc v
+  docPrec _ = doc
+
+instance Pretty UTCTime where
+  doc = text . cs . formatTime defaultTimeLocale rfc822DateFormat
+  docPrec _ = doc
+
+instance (Show a, Indexable ixs a) =>
+         Pretty (Data.IxSet.Typed.IxSet ixs a) where
+  doc = text . show
+  docPrec _ = doc
+
+instance Pretty Word where
+  doc = (doc :: Integer -> Doc) . fromIntegral
+  docPrec _ = doc
+
+instance Pretty Word8 where
+  doc = (doc :: Integer -> Doc) . fromIntegral
+  docPrec _ = doc
+
+instance Pretty Word16 where
+  doc = (doc :: Integer -> Doc) . fromIntegral
+  docPrec _ = doc
+
+instance Pretty Word32 where
+  doc = (doc :: Integer -> Doc) . fromIntegral
+  docPrec _ = doc
+
+instance Pretty Word64 where
+  doc = (doc :: Integer -> Doc) . fromIntegral
+  docPrec _ = doc
+
+instance Pretty Int8 where
+  doc = (doc :: Integer -> Doc) . fromIntegral
+  docPrec _ = doc
+
+instance Pretty Int16 where
+  doc = (doc :: Integer -> Doc) . fromIntegral
+  docPrec _ = doc
+
+instance Pretty Int32 where
+  doc = (doc :: Integer -> Doc) . fromIntegral
+  docPrec _ = doc
+
+instance Pretty Int64 where
+  doc = (doc :: Integer -> Doc) . fromIntegral
+  docPrec _ = doc
