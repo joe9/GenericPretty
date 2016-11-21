@@ -20,7 +20,7 @@
   For more information see the HackageDB project page: <http://hackage.haskell.org/package/GenericPretty>
 -}
 module Text.PrettyPrint.GenericPretty
-  ( Out(..)
+  ( Pretty(..)
   , pp
   , ppLen
   , ppStyle
@@ -41,19 +41,19 @@ import Data.List (last)
 import Data.Text.Lazy (Text)
 -- import Data.Text.Lazy.IO
 import GHC.Generics
-import Text.PrettyPrint.Leijen.Text
+import Text.PrettyPrint.Leijen.Text hiding (Pretty)
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LT
 import Data.String.Conversions (cs)
 
--- | The class 'Out' is the equivalent of 'Prelude.Show'
+-- | The class 'Pretty' is the equivalent of 'Prelude.Show'
 --
 -- It provides conversion of values to pretty printable Pretty.Doc's.
 --
 -- Minimal complete definition: 'docPrec' or 'doc'.
 --
--- Derived instances of 'Out' have the following properties
+-- Derived instances of 'Pretty' have the following properties
 --
 -- * The result of 'docPrec' is a syntactically correct Haskell
 --   expression containing only constants, given the fixity
@@ -80,9 +80,9 @@ import Data.String.Conversions (cs)
 --
 -- > data Tree a =  Leaf a  |  Node (Tree a) (Tree a) deriving (Generic)
 --
--- The derived instance of 'Out' is equivalent to:
+-- The derived instance of 'Pretty' is equivalent to:
 --
--- > instance (Out a) => Out (Tree a) where
+-- > instance (Pretty a) => Pretty (Tree a) where
 -- >
 -- >         docPrec d (Leaf m) = Pretty.sep $ wrapParens (d > appPrec) $
 -- >              text "Leaf" : [nest (constrLen + parenLen) (docPrec (appPrec+1) m)]
@@ -97,7 +97,7 @@ import Data.String.Conversions (cs)
 -- >           where appPrec = 10
 -- >                 constrLen = 5
 -- >                 parenLen = if(d > appPrec) then 1 else 0
-class Out a
+class Pretty a
       -- | 'docPrec' is the equivalent of 'Prelude.showsPrec'.
       --
       -- Convert a value to a pretty printable 'Pretty.Doc'.
@@ -108,21 +108,21 @@ class Out a
        -- Function application has precedence @10@.
     -> a -- ^ the value to be converted to a 'String'
     -> Doc -- ^ the resulting Doc
-  default docPrec :: (Generic a, GOut (Rep a)) =>
+  default docPrec :: (Generic a, GPretty (Rep a)) =>
     Int -> a -> Doc
   docPrec n x = sep $ out1 (from x) Pref n False
   -- | 'doc' is the equivalent of 'Prelude.show'
   --
   -- This is a specialised variant of 'docPrec', using precedence context zero.
   doc :: a -> Doc
-  default doc :: (Generic a, GOut (Rep a)) =>
+  default doc :: (Generic a, GPretty (Rep a)) =>
     a -> Doc
   doc x = sep $ out1 (from x) Pref 0 False
   -- | 'docList' is the equivalent of 'Prelude.showList'.
   --
   -- The method 'docList' is provided to allow the programmer to
   -- give a specialised way of showing lists of values.
-  -- For example, this is used by the predefined 'Out' instance of
+  -- For example, this is used by the predefined 'Pretty' instance of
   -- the 'Char' type, where values of type 'String' should be shown
   -- in double quotes, rather than between square brackets.
   docList :: [a] -> Doc
@@ -152,15 +152,15 @@ showDocOneLine :: Doc -> Text
 showDocOneLine = displayT . renderOneLine
 
 -- The types of data we need to consider for product operator. Record, Prefix and Infix.
--- Tuples aren't considered since they're already instances of 'Out' and thus won't pass through that code.
+-- Tuples aren't considered since they're already instances of 'Pretty' and thus won't pass through that code.
 data Type
   = Rec
   | Pref
   | Inf Text
 
---'GOut' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
--- so can't be an instance of 'Out'
-class GOut f
+--'GPretty' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
+-- so can't be an instance of 'Pretty'
+class GPretty f
       -- |'out1' is the (*->*) kind equivalent of 'docPrec'
                                                             where
   out1
@@ -174,19 +174,19 @@ class GOut f
   isNullary :: f x -> Bool
 
 -- if empty, output nothing, this is a null constructor
-instance GOut U1 where
+instance GPretty U1 where
   out1 _ _ _ _ = [empty]
   isNullary _ = True
 
 -- ignore datatype meta-information
-instance (GOut f, Datatype c) =>
-         GOut (M1 D c f) where
+instance (GPretty f, Datatype c) =>
+         GPretty (M1 D c f) where
   out1 (M1 a) = out1 a
   isNullary (M1 a) = isNullary a
 
 -- if there is a selector, display it and it's value + appropriate white space
-instance (GOut f, Selector c) =>
-         GOut (M1 S c f) where
+instance (GPretty f, Selector c) =>
+         GPretty (M1 S c f) where
   out1 s@(M1 a) t d p
     | LT.null selector = out1 a t d p
     | otherwise = (string selector <+> char '=') :
@@ -197,8 +197,8 @@ instance (GOut f, Selector c) =>
 
 -- constructor
 -- here the real type and parens flag is set and propagated forward via t and n, the precedence factor is updated
-instance (GOut f, Constructor c) =>
-         GOut (M1 C c f) where
+instance (GPretty f, Constructor c) =>
+         GPretty (M1 C c f) where
   out1 c@(M1 a) _ d p =
     case fixity
          -- if prefix add the constructor name, nest the result and possibly put it in parens
@@ -248,22 +248,22 @@ instance (GOut f, Constructor c) =>
   isNullary (M1 a) = isNullary a
 
 -- ignore tagging, call docPrec since these are concrete types
-instance (Out f) =>
-         GOut (K1 t f) where
+instance (Pretty f) =>
+         GPretty (K1 t f) where
   out1 (K1 a) _ d _ = [docPrec d a]
   isNullary _ = False
 
 -- just continue to the corresponding side of the OR
-instance (GOut f, GOut g) =>
-         GOut (f :+: g) where
+instance (GPretty f, GPretty g) =>
+         GPretty (f :+: g) where
   out1 (L1 a) t d p = out1 a t d p
   out1 (R1 a) t d p = out1 a t d p
   isNullary (L1 a) = isNullary a
   isNullary (R1 a) = isNullary a
 
 -- output both sides of the product, possible separated by a comma or an infix operator
-instance (GOut f, GOut g) =>
-         GOut (f :*: g) where
+instance (GPretty f, GPretty g) =>
+         GPretty (f :*: g) where
   out1 (f :*: g) t@Rec d p = initDef [] pfn ++ [last pfn <> comma] ++ pgn
     where
       pfn = out1 f t d p
@@ -301,7 +301,7 @@ instance (GOut f, GOut g) =>
 --
 -- Every other pretty printer just gives some default values to 'fullPP'
 -- fullPP
---   :: (Out a)
+--   :: (Pretty a)
 --   => (TextDetails -> b -> b) -- ^Function that handles the text conversion /(eg: 'outputIO')/
 --   -> b -- ^The end element of the result /( eg: "" or putChar('\n') )/
 --   -> Style -- ^The pretty printing 'Text.PrettyPrint.MyPretty.Style' to use
@@ -344,7 +344,7 @@ instance (GOut f, GOut g) =>
 --
 -- > fullPP outputStr ""
 prettyStyle
-  :: (Out a)
+  :: (Pretty a)
   => Int -> a -> Text
 prettyStyle l = displayT . renderPretty 1.0 l . doc
 
@@ -356,7 +356,7 @@ prettyStyle l = displayT . renderPretty 1.0 l . doc
 --
 -- Where customStyle uses the specified line length, mode = PageMode and ribbonsPerLine = 1.
 prettyLen
-  :: (Out a)
+  :: (Pretty a)
   => Int -> a -> Text
 prettyLen l = displayT . renderPretty 1.0 l . doc
 
@@ -368,17 +368,17 @@ prettyLen l = displayT . renderPretty 1.0 l . doc
 --
 -- Where defaultStyle = (mode=PageMode, lineLength=80, ribbonsPerLine=1.5)
 -- pretty
---   :: (Out a)
+--   :: (Pretty a)
 --   => a -> Text
 -- pretty = displayT . renderPretty 1.0 80 . doc
 
 displayPrettyL
-  :: Out a
+  :: Pretty a
   => a -> Text
 displayPrettyL = displayT . renderPretty 1.0 70 . doc -- pretty
 
 displayPretty
-  :: Out a
+  :: Pretty a
   => a -> T.Text
 displayPretty = toStrict . displayPrettyL
 
@@ -389,7 +389,7 @@ displayPretty = toStrict . displayPrettyL
 --
 -- > fullPP outputIO (putChar '\n')
 ppStyle
-  :: (Out a)
+  :: (Pretty a)
   => Float -> Int -> a -> IO ()
 ppStyle r l = LT.putStrLn . displayT . renderPretty r l . doc
 
@@ -401,7 +401,7 @@ ppStyle r l = LT.putStrLn . displayT . renderPretty r l . doc
 --
 -- Where customStyle uses the specified line length, mode = PageMode and ribbonsPerLine = 1.
 ppLen
-  :: (Out a)
+  :: (Pretty a)
   => Int -> a -> IO ()
 ppLen l = LT.putStrLn . displayT . renderPretty 1 l . doc
 
@@ -413,62 +413,62 @@ ppLen l = LT.putStrLn . displayT . renderPretty 1 l . doc
 --
 -- Where defaultStyle = (mode=PageMode, lineLength=80, ribbonsPerLine=1.5)
 pp
-  :: (Out a)
+  :: (Pretty a)
   => a -> IO ()
 pp = putDoc . doc
 
--- define some instances of Out making sure to generate output identical to 'show' modulo the extra whitespace
-instance Out () where
+-- define some instances of Pretty making sure to generate output identical to 'show' modulo the extra whitespace
+instance Pretty () where
   doc _ = text "()"
   docPrec _ = doc
 
-instance Out Char where
+instance Pretty Char where
   doc a = char '\'' <> (text . LT.singleton $ a) <> char '\''
   docPrec _ = doc
   docList = text . cs
 
-instance Out Int where
+instance Pretty Int where
   docPrec n x
     | n /= 0 && x < 0 = parens $ int x
     | otherwise = int x
   doc = docPrec 0
 
-instance Out Integer where
+instance Pretty Integer where
   docPrec n x
     | n /= 0 && x < 0 = parens $ integer x
     | otherwise = integer x
   doc = docPrec 0
 
-instance Out Float where
+instance Pretty Float where
   docPrec n x
     | n /= 0 && x < 0 = parens $ float x
     | otherwise = float x
   doc = docPrec 0
 
-instance Out Double where
+instance Pretty Double where
   docPrec n x
     | n /= 0 && x < 0 = parens $ double x
     | otherwise = double x
   doc = docPrec 0
 
-instance Out Rational where
+instance Pretty Rational where
   docPrec n x
     | n /= 0 && x < 0 = parens $ rational x
     | otherwise = rational x
   doc = docPrec 0
 
-instance Out a =>
-         Out [a] where
+instance Pretty a =>
+         Pretty [a] where
   doc = docList
   docPrec _ = doc
 
-instance Out Bool where
+instance Pretty Bool where
   doc True  = text "True"
   doc False = text "False"
   docPrec _ = doc
 
-instance Out a =>
-         Out (Maybe a) where
+instance Pretty a =>
+         Pretty (Maybe a) where
   docPrec n Nothing = text "Nothing"
   docPrec n (Just x)
     | n /= 0 = parens result
@@ -477,8 +477,8 @@ instance Out a =>
       result = text "Just" <+> docPrec 10 x
   doc = docPrec 0
 
-instance (Out a, Out b) =>
-         Out (Either a b) where
+instance (Pretty a, Pretty b) =>
+         Pretty (Either a b) where
   docPrec n (Left x)
     | n /= 0 = parens result
     | otherwise = result
@@ -491,32 +491,32 @@ instance (Out a, Out b) =>
       result = string "Right" <+> docPrec 10 y
   doc = docPrec 0
 
-instance (Out a, Out b) =>
-         Out (a, b) where
+instance (Pretty a, Pretty b) =>
+         Pretty (a, b) where
   doc (a, b) = parens (sep [doc a <> comma, doc b])
   docPrec _ = doc
 
-instance (Out a, Out b, Out c) =>
-         Out (a, b, c) where
+instance (Pretty a, Pretty b, Pretty c) =>
+         Pretty (a, b, c) where
   doc (a, b, c) = parens (sep [doc a <> comma, doc b <> comma, doc c])
   docPrec _ = doc
 
-instance (Out a, Out b, Out c, Out d) =>
-         Out (a, b, c, d) where
+instance (Pretty a, Pretty b, Pretty c, Pretty d) =>
+         Pretty (a, b, c, d) where
   doc (a, b, c, d) =
     parens (sep [doc a <> comma, doc b <> comma, doc c <> comma, doc d])
   docPrec _ = doc
 
-instance (Out a, Out b, Out c, Out d, Out e) =>
-         Out (a, b, c, d, e) where
+instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) =>
+         Pretty (a, b, c, d, e) where
   doc (a, b, c, d, e) =
     parens
       (sep
          [doc a <> comma, doc b <> comma, doc c <> comma, doc d <> comma, doc e])
   docPrec _ = doc
 
-instance (Out a, Out b, Out c, Out d, Out e, Out f) =>
-         Out (a, b, c, d, e, f) where
+instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) =>
+         Pretty (a, b, c, d, e, f) where
   doc (a, b, c, d, e, f) =
     parens
       (sep
@@ -529,8 +529,8 @@ instance (Out a, Out b, Out c, Out d, Out e, Out f) =>
          ])
   docPrec _ = doc
 
-instance (Out a, Out b, Out c, Out d, Out e, Out f, Out g) =>
-         Out (a, b, c, d, e, f, g) where
+instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) =>
+         Pretty (a, b, c, d, e, f, g) where
   doc (a, b, c, d, e, f, g) =
     parens
       (sep
@@ -544,7 +544,7 @@ instance (Out a, Out b, Out c, Out d, Out e, Out f, Out g) =>
          ])
   docPrec _ = doc
 
-instance Out LT.Text where
+instance Pretty LT.Text where
   doc = text . cs
   docPrec _ = doc
   docList = doc
