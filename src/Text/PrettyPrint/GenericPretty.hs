@@ -39,7 +39,7 @@ import qualified Data.Text.Lazy.IO            as LT
 import           GHC.Generics
 import           Protolude                    hiding (Text, Type,
                                                empty, (<>))
-import           Text.PrettyPrint.Leijen.Text hiding (Pretty)
+import           Text.PrettyPrint.Leijen.Text hiding (Pretty, pretty, prettyList)
 import           Data.IxSet.Typed             (Indexable)
 import qualified Data.Map
 import           Data.Time
@@ -51,11 +51,11 @@ import qualified Data.IxSet.Typed
 --
 -- It provides conversion of values to pretty printable Pretty.Doc's.
 --
--- Minimal complete definition: 'docPrec' or 'doc'.
+-- Minimal complete definition: 'prettyPrec' or 'doc'.
 --
 -- Derived instances of 'Pretty' have the following properties
 --
--- * The result of 'docPrec' is a syntactically correct Haskell
+-- * The result of 'prettyPrec' is a syntactically correct Haskell
 --   expression containing only constants, given the fixity
 --   declarations in force at the point where the type is declared.
 --   It contains only the constructor names defined in the data type,
@@ -63,7 +63,7 @@ import qualified Data.IxSet.Typed
 --   used, braces, commas, field names, and equal signs are also used.
 --
 -- * If the constructor is defined to be an infix operator, then
---   'docPrec' will produce infix applications of the constructor.
+--   'prettyPrec' will produce infix applications of the constructor.
 --
 -- * the representation will be enclosed in parentheses if the
 --   precedence of the top-level constructor in @x@ is less than @d@
@@ -71,7 +71,7 @@ import qualified Data.IxSet.Typed
 --   is never surrounded in parentheses; if @d@ is @11@ it is always
 --   surrounded in parentheses, unless it is an atomic expression.
 --
--- * If the constructor is defined using record syntax, then 'docPrec'
+-- * If the constructor is defined using record syntax, then 'prettyPrec'
 --   will produce the record-syntax form, with the fields given in the
 --   same order as the original declaration.
 --
@@ -84,53 +84,53 @@ import qualified Data.IxSet.Typed
 --
 -- > instance (Pretty a) => Pretty (Tree a) where
 -- >
--- >         docPrec d (Leaf m) = Pretty.sep $ wrapParens (d > appPrec) $
--- >              text "Leaf" : [nest (constrLen + parenLen) (docPrec (appPrec+1) m)]
+-- >         prettyPrec d (Leaf m) = Pretty.sep $ wrapParens (d > appPrec) $
+-- >              text "Leaf" : [nest (constrLen + parenLen) (prettyPrec (appPrec+1) m)]
 -- >           where appPrec = 10
 -- >                 constrLen = 5;
 -- >                 parenLen = if(d > appPrec) then 1 else 0
 -- >
--- >         docPrec d (Node u v) = Pretty.sep $ wrapParens (d > appPrec) $
+-- >         prettyPrec d (Node u v) = Pretty.sep $ wrapParens (d > appPrec) $
 -- >              text "Node" :
--- >              nest (constrLen + parenLen) (docPrec (appPrec+1) u) :
--- >              [nest (constrLen + parenLen) (docPrec (appPrec+1) v)]
+-- >              nest (constrLen + parenLen) (prettyPrec (appPrec+1) u) :
+-- >              [nest (constrLen + parenLen) (prettyPrec (appPrec+1) v)]
 -- >           where appPrec = 10
 -- >                 constrLen = 5
 -- >                 parenLen = if(d > appPrec) then 1 else 0
 class Pretty a
-      -- | 'docPrec' is the equivalent of 'Prelude.showsPrec'.
+      -- | 'prettyPrec' is the equivalent of 'Prelude.showsPrec'.
       --
       -- Convert a value to a pretty printable 'Pretty.Doc'.
                                                              where
-  docPrec
+  prettyPrec
     :: Int -- ^ the operator precedence of the enclosing
        -- context (a number from @0@ to @11@).
        -- Function application has precedence @10@.
     -> a -- ^ the value to be converted to a 'String'
     -> Doc -- ^ the resulting Doc
-  default docPrec :: (Generic a, GPretty (Rep a)) =>
+  default prettyPrec :: (Generic a, GPretty (Rep a)) =>
     Int -> a -> Doc
-  docPrec n x = sep $ gpretty (from x) Pref n False
+  prettyPrec n x = sep $ gpretty (from x) Pref n False
   -- | 'doc' is the equivalent of 'Prelude.show'
   --
-  -- This is a specialised variant of 'docPrec', using precedence context zero.
-  doc :: a -> Doc
-  default doc :: (Generic a, GPretty (Rep a)) =>
+  -- This is a specialised variant of 'prettyPrec', using precedence context zero.
+  pretty :: a -> Doc
+  default pretty :: (Generic a, GPretty (Rep a)) =>
     a -> Doc
-  doc x = sep $ gpretty (from x) Pref 0 False
-  -- | 'docList' is the equivalent of 'Prelude.showList'.
+  pretty x = sep $ gpretty (from x) Pref 0 False
+  -- | 'prettyList' is the equivalent of 'Prelude.showList'.
   --
-  -- The method 'docList' is provided to allow the programmer to
+  -- The method 'prettyList' is provided to allow the programmer to
   -- give a specialised way of showing lists of values.
   -- For example, this is used by the predefined 'Pretty' instance of
   -- the 'Char' type, where values of type 'String' should be shown
   -- in double quotes, rather than between square brackets.
-  docList :: [a] -> Doc
-  docList = docListWith doc
+  prettyList :: [a] -> Doc
+  prettyList = prettyListWith pretty
 
--- used to define docList, creates output identical to that of show for general list types
-docListWith :: (a -> Doc) -> [a] -> Doc
-docListWith f = brackets . fillCat . punctuate comma . map f
+-- used to define prettyList, creates output identical to that of show for general list types
+prettyListWith :: (a -> Doc) -> [a] -> Doc
+prettyListWith f = brackets . fillCat . punctuate comma . map f
 
 -- returns a list without it's first and last elements
 -- except if the list has a single element, in which case it returns the list unchanged
@@ -162,7 +162,7 @@ data Type
 --'GPretty' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
 -- so can't be an instance of 'Pretty'
 class GPretty f
-      -- |'gpretty' is the (*->*) kind equivalent of 'docPrec'
+      -- |'gpretty' is the (*->*) kind equivalent of 'prettyPrec'
                                                             where
   gpretty
     :: f x -- The sum of products representation of the user's custom type
@@ -256,10 +256,10 @@ instance (GPretty f, Constructor c) =>
                else "(" Monoid.<> xs Monoid.<> ")"
   isNullary (M1 a) = isNullary a
 
--- ignore tagging, call docPrec since these are concrete types
+-- ignore tagging, call prettyPrec since these are concrete types
 instance (Pretty f) =>
          GPretty (K1 t f) where
-  gpretty (K1 a) _ d _ = [docPrec d a]
+  gpretty (K1 a) _ d _ = [prettyPrec d a]
   isNullary _ = False
 
 -- just continue to the corresponding side of the OR
@@ -323,7 +323,7 @@ instance (GPretty f, GPretty g) =>
 -- fullPP td end s a =
 --   fullRender (mode s) (lineLength s) (ribbonsPerLine s) td end doc
 --   where
---     doc = docPrec 0 a
+--     pretty = prettyPrec 0 a
 -- | Utility function that handles the text conversion for 'fullPP'.
 --
 -- 'outputIO' transforms the text into 'String's and outputs it directly.
@@ -356,7 +356,7 @@ instance (GPretty f, GPretty g) =>
 prettyStyle
   :: (Pretty a)
   => Float -> Int -> a -> Text
-prettyStyle r l = displayT . renderPretty r l . doc
+prettyStyle r l = displayT . renderPretty r l . pretty
 
 -- | Semi-customizable pretty printer.
 --
@@ -368,7 +368,7 @@ prettyStyle r l = displayT . renderPretty r l . doc
 prettyLen
   :: (Pretty a)
   => Int -> a -> Text
-prettyLen l = displayT . renderPretty 1.0 l . doc
+prettyLen l = displayT . renderPretty 1.0 l . pretty
 
 -- | The default pretty printer returning 'String's
 --
@@ -380,11 +380,11 @@ prettyLen l = displayT . renderPretty 1.0 l . doc
 -- pretty
 --   :: (Pretty a)
 --   => a -> Text
--- pretty = displayT . renderPretty 1.0 80 . doc
+-- pretty = displayT . renderPretty 1.0 80 . pretty
 displayPrettyL
   :: Pretty a
   => a -> Text
-displayPrettyL = displayT . renderPretty 1.0 70 . doc -- pretty
+displayPrettyL = displayT . renderPretty 1.0 70 . pretty -- pretty
 
 displayPretty
   :: Pretty a
@@ -424,196 +424,196 @@ ppLen l = LT.putStrLn . prettyLen l
 pp
   :: (Pretty a)
   => a -> IO ()
-pp = putDoc . doc
+pp = putDoc . pretty
 
 -- define some instances of Pretty making sure to generate output identical to 'show' modulo the extra whitespace
 instance Pretty () where
-  doc _ = text "()"
-  docPrec _ = doc
+  pretty _ = text "()"
+  prettyPrec _ = pretty
 
 instance Pretty Char where
-  doc a = char '\'' <> (text . LT.singleton $ a) <> char '\''
-  docPrec _ = doc
-  docList = text . cs
+  pretty a = char '\'' <> (text . LT.singleton $ a) <> char '\''
+  prettyPrec _ = pretty
+  prettyList = text . cs
 
 instance Pretty Int where
-  docPrec n x
+  prettyPrec n x
     | n /= 0 && x < 0 = parens $ int x
     | otherwise = int x
-  doc = docPrec 0
+  pretty = prettyPrec 0
 
 instance Pretty Integer where
-  docPrec n x
+  prettyPrec n x
     | n /= 0 && x < 0 = parens $ integer x
     | otherwise = integer x
-  doc = docPrec 0
+  pretty = prettyPrec 0
 
 instance Pretty Float where
-  docPrec n x
+  prettyPrec n x
     | n /= 0 && x < 0 = parens $ float x
     | otherwise = float x
-  doc = docPrec 0
+  pretty = prettyPrec 0
 
 instance Pretty Double where
-  docPrec n x
+  prettyPrec n x
     | n /= 0 && x < 0 = parens $ double x
     | otherwise = double x
-  doc = docPrec 0
+  pretty = prettyPrec 0
 
 instance Pretty Rational where
-  docPrec n x
+  prettyPrec n x
     | n /= 0 && x < 0 = parens $ rational x
     | otherwise = rational x
-  doc = docPrec 0
+  pretty = prettyPrec 0
 
 instance Pretty a =>
          Pretty [a] where
-  doc = docList
-  docPrec _ = doc
+  pretty = prettyList
+  prettyPrec _ = pretty
 
 instance Pretty Bool where
-  doc True  = text "True"
-  doc False = text "False"
-  docPrec _ = doc
+  pretty True  = text "True"
+  pretty False = text "False"
+  prettyPrec _ = pretty
 
 instance Pretty a =>
          Pretty (Maybe a) where
-  docPrec _ Nothing = text "Nothing"
-  docPrec n (Just x)
+  prettyPrec _ Nothing = text "Nothing"
+  prettyPrec n (Just x)
     | n /= 0 = parens result
     | otherwise = result
     where
-      result = text "Just" <+> docPrec 10 x
-  doc = docPrec 0
+      result = text "Just" <+> prettyPrec 10 x
+  pretty = prettyPrec 0
 
 instance (Pretty a, Pretty b) =>
          Pretty (Either a b) where
-  docPrec n (Left x)
+  prettyPrec n (Left x)
     | n /= 0 = parens result
     | otherwise = result
     where
-      result = string "Left" <+> docPrec 10 x
-  docPrec n (Right y)
+      result = string "Left" <+> prettyPrec 10 x
+  prettyPrec n (Right y)
     | n /= 0 = parens result
     | otherwise = result
     where
-      result = string "Right" <+> docPrec 10 y
-  doc = docPrec 0
+      result = string "Right" <+> prettyPrec 10 y
+  pretty = prettyPrec 0
 
 instance (Pretty a, Pretty b) =>
          Pretty (a, b) where
-  doc (a, b) = parens (sep [doc a <> comma, doc b])
-  docPrec _ = doc
+  pretty (a, b) = parens (sep [pretty a <> comma, pretty b])
+  prettyPrec _ = pretty
 
 instance (Pretty a, Pretty b, Pretty c) =>
          Pretty (a, b, c) where
-  doc (a, b, c) = parens (sep [doc a <> comma, doc b <> comma, doc c])
-  docPrec _ = doc
+  pretty (a, b, c) = parens (sep [pretty a <> comma, pretty b <> comma, pretty c])
+  prettyPrec _ = pretty
 
 instance (Pretty a, Pretty b, Pretty c, Pretty d) =>
          Pretty (a, b, c, d) where
-  doc (a, b, c, d) =
-    parens (sep [doc a <> comma, doc b <> comma, doc c <> comma, doc d])
-  docPrec _ = doc
+  pretty (a, b, c, d) =
+    parens (sep [pretty a <> comma, pretty b <> comma, pretty c <> comma, pretty d])
+  prettyPrec _ = pretty
 
 instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) =>
          Pretty (a, b, c, d, e) where
-  doc (a, b, c, d, e) =
+  pretty (a, b, c, d, e) =
     parens
       (sep
-         [doc a <> comma, doc b <> comma, doc c <> comma, doc d <> comma, doc e])
-  docPrec _ = doc
+         [pretty a <> comma, pretty b <> comma, pretty c <> comma, pretty d <> comma, pretty e])
+  prettyPrec _ = pretty
 
 instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) =>
          Pretty (a, b, c, d, e, f) where
-  doc (a, b, c, d, e, f) =
+  pretty (a, b, c, d, e, f) =
     parens
       (sep
-         [ doc a <> comma
-         , doc b <> comma
-         , doc c <> comma
-         , doc d <> comma
-         , doc e <> comma
-         , doc f
+         [ pretty a <> comma
+         , pretty b <> comma
+         , pretty c <> comma
+         , pretty d <> comma
+         , pretty e <> comma
+         , pretty f
          ])
-  docPrec _ = doc
+  prettyPrec _ = pretty
 
 instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) =>
          Pretty (a, b, c, d, e, f, g) where
-  doc (a, b, c, d, e, f, g) =
+  pretty (a, b, c, d, e, f, g) =
     parens
       (sep
-         [ doc a <> comma
-         , doc b <> comma
-         , doc c <> comma
-         , doc d <> comma
-         , doc e <> comma
-         , doc f <> comma
-         , doc g
+         [ pretty a <> comma
+         , pretty b <> comma
+         , pretty c <> comma
+         , pretty d <> comma
+         , pretty e <> comma
+         , pretty f <> comma
+         , pretty g
          ])
-  docPrec _ = doc
+  prettyPrec _ = pretty
 
 instance Pretty LT.Text where
-  doc = string
-  docPrec _ = doc
-  docList = doc
+  pretty = string
+  prettyPrec _ = pretty
+  prettyList = pretty
 
 instance (Pretty a, Pretty b) =>
          Pretty (Data.Map.Map a b) where
-  doc v = text "fromList " <+> doc v
-  docPrec _ = doc
+  pretty v = text "fromList " <+> pretty v
+  prettyPrec _ = pretty
 
 instance (Pretty a) =>
          Pretty (Data.IntMap.IntMap a) where
-  doc v = text "fromList " <+> doc v
-  docPrec _ = doc
+  pretty v = text "fromList " <+> pretty v
+  prettyPrec _ = pretty
 
 instance (Pretty a, Pretty b) =>
          Pretty (Data.HashMap.Strict.HashMap a b) where
-  doc v = text "fromList " <+> doc v
-  docPrec _ = doc
+  pretty v = text "fromList " <+> pretty v
+  prettyPrec _ = pretty
 
 instance Pretty UTCTime where
-  doc = text . cs . formatTime defaultTimeLocale rfc822DateFormat
-  docPrec _ = doc
+  pretty = text . cs . formatTime defaultTimeLocale rfc822DateFormat
+  prettyPrec _ = pretty
 
 instance (Show a, Indexable ixs a) =>
          Pretty (Data.IxSet.Typed.IxSet ixs a) where
-  doc = text . show
-  docPrec _ = doc
+  pretty = text . show
+  prettyPrec _ = pretty
 
 instance Pretty Word where
-  doc = (doc :: Integer -> Doc) . fromIntegral
-  docPrec _ = doc
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+  prettyPrec _ = pretty
 
 instance Pretty Word8 where
-  doc = (doc :: Integer -> Doc) . fromIntegral
-  docPrec _ = doc
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+  prettyPrec _ = pretty
 
 instance Pretty Word16 where
-  doc = (doc :: Integer -> Doc) . fromIntegral
-  docPrec _ = doc
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+  prettyPrec _ = pretty
 
 instance Pretty Word32 where
-  doc = (doc :: Integer -> Doc) . fromIntegral
-  docPrec _ = doc
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+  prettyPrec _ = pretty
 
 instance Pretty Word64 where
-  doc = (doc :: Integer -> Doc) . fromIntegral
-  docPrec _ = doc
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+  prettyPrec _ = pretty
 
 instance Pretty Int8 where
-  doc = (doc :: Integer -> Doc) . fromIntegral
-  docPrec _ = doc
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+  prettyPrec _ = pretty
 
 instance Pretty Int16 where
-  doc = (doc :: Integer -> Doc) . fromIntegral
-  docPrec _ = doc
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+  prettyPrec _ = pretty
 
 instance Pretty Int32 where
-  doc = (doc :: Integer -> Doc) . fromIntegral
-  docPrec _ = doc
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+  prettyPrec _ = pretty
 
 instance Pretty Int64 where
-  doc = (doc :: Integer -> Doc) . fromIntegral
-  docPrec _ = doc
+  pretty = (pretty :: Integer -> Doc) . fromIntegral
+  prettyPrec _ = pretty
