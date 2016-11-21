@@ -97,6 +97,8 @@ Library
                          , unordered-containers
                          , time
                          , ixset-typed
+                         , groom
+                         , pretty
 
   -- use Protolude instead of Prelude
   ghc-options:         -Wall

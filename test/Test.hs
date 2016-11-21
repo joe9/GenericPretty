@@ -4,8 +4,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 import           Data.Text.Lazy               (Text)
+import           qualified Data.Text.IO               as T
+import           Data.String.Conversions (cs)
+import           Text.Groom
 import           Data.Text.Lazy.IO            as TL
 import           Protolude                    hiding (Text, (<>))
+import           GHC.Generics
 import qualified Text.PrettyPrint.Leijen.Text as PP
 
 import Text.PrettyPrint.GenericPretty
@@ -14,7 +18,7 @@ data Tree a
   = Leaf a
   | Node (Tree a)
          (Tree a)
-  deriving (Generic, Pretty)
+  deriving (Show, Generic, Pretty)
 
 data Tree1 a b
   = Leaf1 a
@@ -56,6 +60,7 @@ ppexpr2 x = PP.displayT (PP.renderPretty 1.0 70 (pretty x))
 main :: IO ()
 main = do
   TL.putStrLn (ppexpr tree1)
+  (T.putStrLn . cs . groom) tree1
   TL.putStrLn (ppexpr1 Dog)
   TL.putStrLn (ppexpr tree2)
   TL.putStrLn (ppexpr tree3)
@@ -65,22 +70,28 @@ main = do
   TL.putStrLn
     (PP.displayT (PP.renderPretty 1.0 70 (pretty ([10, 20, 30] :: [Int]))))
   TL.putStrLn (ppexpr3 animal1)
+  (T.putStrLn . cs . groom) animal1
 
 animal1 :: Animal1
-animal1 = Animal1 10 "junk animal" "junk animal again"
+animal1 = Animal1 10 "junk animal" "junk animal again" Dog tree1
 
 data Animal
   = Dog
   | Cat
   | Horse
   | Elephant
-  deriving (Generic, Pretty, Enum)
+  deriving (Show, Generic, Pretty, Enum)
 
 ppexpr1 :: Animal -> Text
 ppexpr1 x = PP.displayT (PP.renderPretty 1.0 70 (pretty x))
 
-data Animal1 = Animal1 {aType :: Int , aName :: Text, aNameAgain :: Text}
-  deriving (Show, Generic, Pretty)
+data Animal1 = Animal1
+  { aType      :: Int
+  , aName      :: Text
+  , aNameAgain :: Text
+  , animal     :: Animal
+  , aTree      :: Tree Int
+  } deriving (Show, Generic, Pretty)
 
 ppexpr3 :: Animal1 -> Text
 ppexpr3 x = PP.displayT (PP.renderPretty 1.0 70 (pretty x))
