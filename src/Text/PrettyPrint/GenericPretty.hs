@@ -24,19 +24,13 @@ module Text.PrettyPrint.GenericPretty
   , pp
   , ppLen
   , ppStyle
-  , pretty
-  , prettyLen
-  , prettyStyle
---   , fullPP
-  , Generic
---   , outputIO
---   , outputStr
+  , displayPretty
+  , displayPrettyL
   ) where
 
 import Protolude hiding ((<>), Text, Type, empty)
 import qualified Data.Monoid as Monoid
 import Data.Char
-import Safe
 import Data.List (last)
 import Data.Text.Lazy (Text)
 -- import Data.Text.Lazy.IO
@@ -345,8 +339,8 @@ instance (GPretty f, GPretty g) =>
 -- > fullPP outputStr ""
 prettyStyle
   :: (Pretty a)
-  => Int -> a -> Text
-prettyStyle l = displayT . renderPretty 1.0 l . doc
+  => Float -> Int -> a -> Text
+prettyStyle r l = displayT . renderPretty r l . doc
 
 -- | Semi-customizable pretty printer.
 --
@@ -391,7 +385,7 @@ displayPretty = toStrict . displayPrettyL
 ppStyle
   :: (Pretty a)
   => Float -> Int -> a -> IO ()
-ppStyle r l = LT.putStrLn . displayT . renderPretty r l . doc
+ppStyle r l = LT.putStrLn . prettyStyle r l
 
 -- | Semi-customizable pretty printer.
 --
@@ -403,7 +397,7 @@ ppStyle r l = LT.putStrLn . displayT . renderPretty r l . doc
 ppLen
   :: (Pretty a)
   => Int -> a -> IO ()
-ppLen l = LT.putStrLn . displayT . renderPretty 1 l . doc
+ppLen l = LT.putStrLn . prettyLen l
 
 -- | The default Pretty Printer,
 --
@@ -545,6 +539,6 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) 
   docPrec _ = doc
 
 instance Pretty LT.Text where
-  doc = text . cs
+  doc = string
   docPrec _ = doc
   docList = doc
