@@ -110,14 +110,14 @@ class Pretty a
     -> Doc -- ^ the resulting Doc
   default docPrec :: (Generic a, GPretty (Rep a)) =>
     Int -> a -> Doc
-  docPrec n x = sep $ out1 (from x) Pref n False
+  docPrec n x = sep $ gpretty (from x) Pref n False
   -- | 'doc' is the equivalent of 'Prelude.show'
   --
   -- This is a specialised variant of 'docPrec', using precedence context zero.
   doc :: a -> Doc
   default doc :: (Generic a, GPretty (Rep a)) =>
     a -> Doc
-  doc x = sep $ out1 (from x) Pref 0 False
+  doc x = sep $ gpretty (from x) Pref 0 False
   -- | 'docList' is the equivalent of 'Prelude.showList'.
   --
   -- The method 'docList' is provided to allow the programmer to
@@ -162,9 +162,9 @@ data Type
 --'GPretty' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
 -- so can't be an instance of 'Pretty'
 class GPretty f
-      -- |'out1' is the (*->*) kind equivalent of 'docPrec'
+      -- |'gpretty' is the (*->*) kind equivalent of 'docPrec'
                                                             where
-  out1
+  gpretty
     :: f x -- The sum of products representation of the user's custom type
     -> Type -- The type of multiplication. Record, Prefix or Infix.
     -> Int -- The operator precedence, determines wether to wrap stuff in parens.
@@ -176,23 +176,23 @@ class GPretty f
 
 -- if empty, output nothing, this is a null constructor
 instance GPretty U1 where
-  out1 _ _ _ _ = [empty]
+  gpretty _ _ _ _ = [empty]
   isNullary _ = True
 
 -- ignore datatype meta-information
 instance (GPretty f) =>
          GPretty (M1 D c f) where
-  out1 (M1 a) = out1 a
+  gpretty (M1 a) = gpretty a
   isNullary (M1 a) = isNullary a
 
 -- if there is a selector, display it and it's value + appropriate white space
 instance (GPretty f, Selector c) =>
          GPretty (M1 S c f) where
-  out1 s@(M1 a) t d p
-    | LT.null selector = out1 a t d p
+  gpretty s@(M1 a) t d p
+    | LT.null selector = gpretty a t d p
     | otherwise =
       (string selector <+> char '=') :
-      map (nest $ (fromIntegral . LT.length) selector + 3) (out1 a t 0 p)
+      map (nest $ (fromIntegral . LT.length) selector + 3) (gpretty a t 0 p)
     where
       selector = (cs . selName) s
   isNullary (M1 a) = isNullary a
@@ -201,15 +201,15 @@ instance (GPretty f, Selector c) =>
 -- here the real type and parens flag is set and propagated forward via t and n, the precedence factor is updated
 instance (GPretty f, Constructor c) =>
          GPretty (M1 C c f) where
-  out1 c@(M1 a) _ d _ =
+  gpretty c@(M1 a) _ d _ =
     case fixity
          -- if prefix add the constructor name, nest the result and possibly put it in parens
           of
       Prefix ->
         wrapParens boolParens $
-        text name : makeMargins t boolParens (out1 a t 11 boolParens)
+        text name : makeMargins t boolParens (gpretty a t 11 boolParens)
       -- if infix possibly put in parens
-      Infix _ m -> wrapParens (d > m) $ out1 a t (m + 1) (d > m)
+      Infix _ m -> wrapParens (d > m) $ gpretty a t (m + 1) (d > m)
     where
       boolParens = d > 10 && (not $ isNullary a)
       name = checkInfix . cs $ conName c
@@ -259,30 +259,30 @@ instance (GPretty f, Constructor c) =>
 -- ignore tagging, call docPrec since these are concrete types
 instance (Pretty f) =>
          GPretty (K1 t f) where
-  out1 (K1 a) _ d _ = [docPrec d a]
+  gpretty (K1 a) _ d _ = [docPrec d a]
   isNullary _ = False
 
 -- just continue to the corresponding side of the OR
 instance (GPretty f, GPretty g) =>
          GPretty (f :+: g) where
-  out1 (L1 a) t d p = out1 a t d p
-  out1 (R1 a) t d p = out1 a t d p
+  gpretty (L1 a) t d p = gpretty a t d p
+  gpretty (R1 a) t d p = gpretty a t d p
   isNullary (L1 a) = isNullary a
   isNullary (R1 a) = isNullary a
 
 -- output both sides of the product, possible separated by a comma or an infix operator
 instance (GPretty f, GPretty g) =>
          GPretty (f :*: g) where
-  out1 (f :*: g) t@Rec d p = initDef [] pfn ++ [last pfn <> comma] ++ pgn
+  gpretty (f :*: g) t@Rec d p = initDef [] pfn ++ [last pfn <> comma] ++ pgn
     where
-      pfn = out1 f t d p
-      pgn = out1 g t d p
+      pfn = gpretty f t d p
+      pgn = gpretty g t d p
   -- if infix, nest the second value since it isn't nested in the constructor
-  out1 (f :*: g) t@(Inf s) d p =
+  gpretty (f :*: g) t@(Inf s) d p =
     initDef [] pfn ++ [last pfn <+> text s] ++ checkIndent pgn
     where
-      pfn = out1 f t d p
-      pgn = out1 g t d p
+      pfn = gpretty f t d p
+      pgn = gpretty g t d p
       -- if the second value of the :*: is in parens, nest it, otherwise just check for an extra paren space
       -- needs to get the string representation of the first elements in the left and right Doc lists
       -- to be able to determine the correct indentation
@@ -307,7 +307,7 @@ instance (GPretty f, GPretty g) =>
                LT.takeWhile (/= ' ') . LT.dropWhile (== '(') . showDocOneLine)
               (head pfn)
           parensLength = LT.length $ LT.takeWhile (== '(') strG
-  out1 (f :*: g) t@Pref n p = out1 f t n p ++ out1 g t n p
+  gpretty (f :*: g) t@Pref n p = gpretty f t n p ++ gpretty g t n p
   isNullary _ = False
 
 -- | 'fullPP' is a fully customizable Pretty Printer
