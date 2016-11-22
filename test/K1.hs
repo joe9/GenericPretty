@@ -12,7 +12,8 @@ import Protolude               hiding (K1)
 
 import Text.PrettyPrint.GenericPretty
 
-data Sample = Sample ByteString
+data Sample =
+  Sample ByteString
   deriving (Eq, Read, Show, Generic, Pretty)
 
 sample :: Sample

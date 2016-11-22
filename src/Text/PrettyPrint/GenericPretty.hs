@@ -27,6 +27,8 @@ module Text.PrettyPrint.GenericPretty
   , displayPretty
   , displayPrettyLenL
   , displayPrettyLen
+  , displayPrettyPrefixL
+  , displayPrettyPrefix
   ) where
 
 import qualified Data.HashMap.Strict
@@ -254,16 +256,6 @@ instance Pretty Int32 where
 instance Pretty Int64 where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
 
-displayPrettyL
-  :: Pretty a
-  => a -> Text
-displayPrettyL = PP.displayT . PP.renderPretty 1.0 70 . pretty
-
-displayPretty
-  :: Pretty a
-  => a -> T.Text
-displayPretty = toStrict . displayPrettyL
-
 displayPrettyLenL
   :: Pretty a
   => Int -> a -> Text
@@ -273,3 +265,24 @@ displayPrettyLen
   :: Pretty a
   => Int -> a -> T.Text
 displayPrettyLen l = toStrict . displayPrettyLenL l
+
+displayPrettyL
+  :: Pretty a
+  => a -> Text
+displayPrettyL = displayPrettyLenL 70
+
+displayPretty
+  :: Pretty a
+  => a -> T.Text
+displayPretty = toStrict . displayPrettyL
+
+displayPrettyPrefixL
+  :: (Pretty a, Pretty b)
+  => a -> b -> Text
+displayPrettyPrefixL prefix =
+  PP.displayT . PP.renderPretty 1.0 70 . (PP.<>) (pretty prefix) . pretty
+
+displayPrettyPrefix
+  :: (Pretty a, Pretty b)
+  => a -> b -> T.Text
+displayPrettyPrefix prefix = toStrict . displayPrettyPrefixL prefix

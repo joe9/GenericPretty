@@ -12,7 +12,12 @@ import Protolude               hiding (Product)
 
 import Text.PrettyPrint.GenericPretty
 
-data Product = Product Int Integer Char Text ByteString
+data Product =
+  Product Int
+          Integer
+          Char
+          Text
+          ByteString
   deriving (Eq, Read, Show, Generic, Pretty)
 
 sample :: Product
