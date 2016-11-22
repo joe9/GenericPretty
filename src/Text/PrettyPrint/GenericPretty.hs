@@ -165,7 +165,6 @@ instance Pretty ByteString where
 
 instance Pretty a =>
          Pretty [a] where
---   pretty = brackets . align . fillCat . beforePunctuate comma . fmap pretty
   pretty = brackets . align . fillCat . punctuate comma . fmap pretty
 
 --   pretty (Just x) = nest 3 (text "Just" <$> pretty x)
