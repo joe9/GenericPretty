@@ -69,6 +69,8 @@ main = do
     (PP.displayT (PP.renderPretty 1.0 70 (pretty (Just 10 :: Maybe Int))))
   TL.putStrLn
     (PP.displayT (PP.renderPretty 1.0 70 (pretty ([10, 20 .. 1000] :: [Int]))))
+  TL.putStrLn
+    (PP.displayT (PP.renderPretty 1.0 70 (pretty (Just ([10, 20 .. 1000] :: [Int])))))
   TL.putStrLn (ppexpr3 animal1)
   (T.putStrLn . cs . groom) animal1
 

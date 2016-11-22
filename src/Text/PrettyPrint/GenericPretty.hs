@@ -40,9 +40,9 @@ import           Data.Text.Lazy               (Text, fromStrict)
 import           Data.Time
 import           GHC.Generics
 import           Protolude                    hiding (Text, bool,
-                                               (<>))
-import           Text.PrettyPrint.Leijen.Text hiding (Pretty (..),
                                                (<$>), (<>))
+import           Text.PrettyPrint.Leijen.Text hiding (Pretty (..),
+                                               (<>))
 import qualified Text.PrettyPrint.Leijen.Text as PP
 
 -- | The class 'Pretty' is the equivalent of 'Prelude.Show'
@@ -53,9 +53,10 @@ class Pretty a where
   pretty :: a -> Doc
   default pretty :: (Generic a, GPretty (Rep a)) =>
     a -> Doc
-  pretty x = case (gpretty . from) x of
-               (o:[]) -> o
-               os -> PP.list os
+  pretty x =
+    case (gpretty . from) x of
+      (o:[]) -> o
+      os     -> PP.list os
 
 --'GPretty' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
 -- so can't be an instance of 'Pretty'
@@ -78,9 +79,9 @@ instance (GPretty f, Selector c) =>
   gpretty s@(M1 a)
     | selector == "" = gpretty a
     | otherwise =
-        if null components
-           then []
-           else [string (cs selector) <+> string "=" <+> cat components]
+      if null components
+        then []
+        else [string (cs selector) <+> string "=" <+> cat components]
     where
       selector = selName s
       components = fmap (nest (length selector + 3)) (gpretty a)
@@ -93,10 +94,13 @@ instance (GPretty f, Constructor c) =>
   gpretty c@(M1 a)
     | null components = [(string . cs . conName) c]
     | conIsRecord c =
-      [(string . cs . conName) c <+> (braces . align . fillSep . punctuate comma) components]
+      [ (string . cs . conName) c <+>
+        (braces . align . fillSep . punctuate comma) components
+      ]
     | otherwise =
-        [parens ((string . cs . conName) c <+> (align . sep) components)]
-     where components = gpretty a
+      [parens ((string . cs . conName) c <+> (align . sep) components)]
+    where
+      components = gpretty a
 
 -- ignore tagging, call docPrec since these are concrete types
 instance (Pretty f) =>
@@ -107,8 +111,9 @@ instance (Pretty f) =>
 instance (GPretty a, GPretty b) =>
          GPretty (a :*: b) where
   gpretty (x :*: y) = xs ++ ys
-                        where xs = gpretty x
-                              ys = gpretty y
+    where
+      xs = gpretty x
+      ys = gpretty y
 
 -- just continue to the corresponding side of the OR
 instance (GPretty a, GPretty b) =>
@@ -126,24 +131,28 @@ instance Pretty T.Text where
   pretty = string . fromStrict
 
 instance Pretty Int where
-  pretty i = if i < 0
-                then (parens . int) i
-                else int i
+  pretty i =
+    if i < 0
+      then (parens . int) i
+      else int i
 
 instance Pretty Integer where
-  pretty i = if i < 0
-                then (parens . integer) i
-                else integer i
+  pretty i =
+    if i < 0
+      then (parens . integer) i
+      else integer i
 
 instance Pretty Float where
-  pretty i = if i < 0
-                then (parens . float) i
-                else float i
+  pretty i =
+    if i < 0
+      then (parens . float) i
+      else float i
 
 instance Pretty Double where
-  pretty i = if i < 0
-                then (parens . double) i
-                else double i
+  pretty i =
+    if i < 0
+      then (parens . double) i
+      else double i
 
 instance Pretty Rational where
   pretty = rational
@@ -156,17 +165,21 @@ instance Pretty ByteString where
 
 instance Pretty a =>
          Pretty [a] where
-  pretty = brackets . fillCat . punctuate comma . fmap pretty
+--   pretty = brackets . align . fillCat . beforePunctuate comma . fmap pretty
+  pretty = brackets . align . fillCat . punctuate comma . fmap pretty
 
+--   pretty (Just x) = nest 3 (text "Just" <$> pretty x)
 instance Pretty a =>
          Pretty (Maybe a) where
   pretty Nothing  = text "Nothing"
   pretty (Just x) = text "Just" <+> pretty x
 
+--   pretty (Left x)  = nest 3 ( text "Left" <$> pretty x)
+--   pretty (Right y) = nest 3 ( text "Right" <$> pretty y)
 instance (Pretty a, Pretty b) =>
          Pretty (Either a b) where
-  pretty (Left x)  = text "Left" <+> pretty x
-  pretty (Right y) = text "Right" <+> pretty y
+  pretty (Left x)  = text "Left" <$> pretty x
+  pretty (Right y) = text "Right" <$> pretty y
 
 instance (Pretty a, Pretty b) =>
          Pretty (a, b) where
@@ -198,15 +211,15 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) 
 
 instance (Pretty a, Pretty b) =>
          Pretty (Data.Map.Map a b) where
-  pretty v = text "fromList " <+> pretty v
+  pretty v = text "fromList" <+> (align . pretty) v
 
 instance (Pretty a) =>
          Pretty (Data.IntMap.IntMap a) where
-  pretty v = text "fromList " <+> pretty v
+  pretty v = text "fromList" <+> (align . pretty) v
 
 instance (Pretty a, Pretty b) =>
          Pretty (Data.HashMap.Strict.HashMap a b) where
-  pretty v = text "fromList " <+> pretty v
+  pretty v = text "fromList" <+> (align . pretty) v
 
 instance Pretty UTCTime where
   pretty = text . cs . formatTime defaultTimeLocale rfc822DateFormat
