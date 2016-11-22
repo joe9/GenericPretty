@@ -18,7 +18,7 @@ data Tree a
   = Leaf a
   | Node (Tree a)
          (Tree a)
-  deriving (Show, Generic, Pretty)
+  deriving (Eq, Read, Show, Generic, Pretty)
 
 data Tree1 a b
   = Leaf1 a
@@ -75,14 +75,14 @@ main = do
   (T.putStrLn . cs . groom) animal1
 
 animal1 :: Animal1
-animal1 = Animal1 10 "junk animal" "junk animal again" Dog tree1
+animal1 = Animal1 10 "junk animal" "junk animal again" Dog tree1 'C'
 
 data Animal
   = Dog
   | Cat
   | Horse
   | Elephant
-  deriving (Show, Generic, Pretty, Enum)
+  deriving (Eq, Read, Show, Generic, Pretty, Enum)
 
 ppexpr1 :: Animal -> Text
 ppexpr1 x = PP.displayT (PP.renderPretty 1.0 70 (pretty x))
@@ -93,7 +93,8 @@ data Animal1 = Animal1
   , aNameAgain :: Text
   , animal     :: Animal
   , aTree      :: Tree Int
-  } deriving (Show, Generic, Pretty)
+  , aChar      :: Char
+  } deriving (Eq, Read, Show, Generic, Pretty)
 
 ppexpr3 :: Animal1 -> Text
 ppexpr3 x = PP.displayT (PP.renderPretty 1.0 70 (pretty x))

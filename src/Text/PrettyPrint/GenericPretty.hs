@@ -122,13 +122,13 @@ instance (GPretty a, GPretty b) =>
   gpretty (R1 x) = gpretty x
 
 instance Pretty Char where
-  pretty = char
+  pretty = squotes . char
 
 instance Pretty Text where
-  pretty = string
+  pretty = dquotes . string
 
 instance Pretty T.Text where
-  pretty = string . fromStrict
+  pretty = pretty . fromStrict
 
 instance Pretty Int where
   pretty i =
@@ -161,7 +161,7 @@ instance Pretty Bool where
   pretty = bool
 
 instance Pretty ByteString where
-  pretty = string . cs
+  pretty = (pretty :: Text -> Doc) . cs
 
 instance Pretty a =>
          Pretty [a] where
