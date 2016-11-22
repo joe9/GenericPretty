@@ -15,7 +15,7 @@ import           Data.String.Conversions      (cs)
 
 import Text.PrettyPrint.GenericPretty
 
-import qualified Empty
+import qualified U1
 
 -- got this idea from
 --  https://jaspervdj.be/posts/2015-03-13-practical-testing-in-haskell.html
@@ -64,12 +64,12 @@ tests =
   testGroup
     "NineP"
     [ -- testProperty "test U1" prop_U1
-     testCase "testEmptyDataType" testEmptyDataType
+     testCase "testU1" testU1
     ]
 
-testEmptyDataType :: Assertion
-testEmptyDataType =
-  Empty.showAndReadEmpty Empty.empty @?= Right Empty.empty
+testU1 :: Assertion
+testU1 =
+  U1.showAndReadEmpty U1.empty @?= Right U1.empty
 
 -- instance Arbitrary (U1 a) where arbitrary = mempty
 -- instance Arbitrary (U1 a) where arbitrary = return ()

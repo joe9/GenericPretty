@@ -114,7 +114,7 @@ test-suite GenericPretty-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       GenericPretty.Tests
-                       Empty
+                       U1
   build-tools:       hsc2hs
   build-depends:       base
                      , protolude

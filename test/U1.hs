@@ -3,7 +3,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Empty where
+module U1 where
 
 import Data.String.Conversions (cs)
 import GHC.Base
