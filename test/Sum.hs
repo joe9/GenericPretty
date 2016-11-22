@@ -3,21 +3,20 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module U1 where
+module Sum where
 
 import Data.String.Conversions (cs)
 import GHC.Base
 import GHC.Generics
-import Protolude               hiding (empty, get, put)
+import Protolude               hiding (empty, Sum)
 
 import Text.PrettyPrint.GenericPretty
 
-data Empty =
-  Empty
+data Sum = Cat | Dog | Rat | Elephant
   deriving (Eq, Read, Show, Generic, Pretty)
 
-sample :: Empty
-sample = Empty
+sample :: Sum
+sample = Elephant
 
-showAndRead :: Empty -> Either GHC.Base.String Empty
+showAndRead :: Sum -> Either GHC.Base.String Sum
 showAndRead = readEither . cs . displayPretty

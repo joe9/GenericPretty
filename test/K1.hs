@@ -3,21 +3,20 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module U1 where
+module K1 where
 
 import Data.String.Conversions (cs)
 import GHC.Base
 import GHC.Generics
-import Protolude               hiding (empty, get, put)
+import Protolude               hiding (K1)
 
 import Text.PrettyPrint.GenericPretty
 
-data Empty =
-  Empty
+data Sample = Sample ByteString
   deriving (Eq, Read, Show, Generic, Pretty)
 
-sample :: Empty
-sample = Empty
+sample :: Sample
+sample = Sample "sample bytestring"
 
-showAndRead :: Empty -> Either GHC.Base.String Empty
+showAndRead :: Sample -> Either GHC.Base.String Sample
 showAndRead = readEither . cs . displayPretty

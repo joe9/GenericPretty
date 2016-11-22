@@ -115,6 +115,10 @@ test-suite GenericPretty-test
   main-is:             Spec.hs
   other-modules:       GenericPretty.Tests
                        U1
+                       Sum
+                       Product
+                       K1
+                       TestData
   build-tools:       hsc2hs
   build-depends:       base
                      , protolude
