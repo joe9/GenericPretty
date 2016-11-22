@@ -61,8 +61,8 @@ main = do
 --   ppStyle zigStyle tree1
   putText "------ with GenericPretty -----"
 --   mapM_ ( putText . displayPretty) [ tree1, tree2 , tree3, tree4, tree5]
-  mapM_ (ppLen 30) [ tree1, tree2 , tree3, tree4, tree5]
-  mapM_ (ppLen 30) [ animal1 ]
+--   mapM_ (ppLen 30) [ tree1, tree2 , tree3, tree4, tree5]
+--   mapM_ (ppLen 30) [ animal1 ]
 --   (ppLen 30) [ 1 .. (100 :: Int)]
   putText "------ with TestGenericPretty -----"
   mapM_ (putText . Test.displayPrettyLen 30) [ tree1, tree2 , tree3, tree4, tree5]
@@ -90,7 +90,7 @@ main = do
 
   ( putText . displayStructure) tree
   (Protolude.putText . displayPrettyStructure ) tree
-  (ppLen 30) tree
+--   (ppLen 30) tree
   putText . Test.displayPrettyLen 30 $ tree
   putText . Test.displayPrettyLen 80 $ tree
   putText . Test.displayPrettyLen 80 $ animal1

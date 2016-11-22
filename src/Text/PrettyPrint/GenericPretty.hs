@@ -20,7 +20,7 @@
 
   For more information see the HackageDB project page: <http://hackage.haskell.org/package/GenericPretty>
 -}
-module Text.PrettyPrint.TestGenericPretty
+module Text.PrettyPrint.GenericPretty
   ( Pretty(..)
   , Generic
   , displayPrettyL
@@ -156,7 +156,7 @@ instance Pretty ByteString where
 
 instance Pretty a =>
          Pretty [a] where
-  pretty = PP.list . fmap pretty
+  pretty = brackets . fillCat . punctuate comma . fmap pretty
 
 instance Pretty a =>
          Pretty (Maybe a) where
