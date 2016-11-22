@@ -1,0 +1,4 @@
+
+add a GenericPrettySimple that does not use wl-pprint-text but just an indent of 3 spaces.
+
+the gpretty will change from f x -> [Doc] to f x -> Int -> [Doc], even the pretty method will have an Int parameter
