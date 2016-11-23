@@ -184,14 +184,14 @@ instance Pretty a =>
 instance Pretty a =>
          Pretty (Maybe a) where
   pretty Nothing  = text "Nothing"
-  pretty (Just x) = text "Just" <+> pretty x
+  pretty (Just x) = nest 5 (text "Just" <+> pretty x)
 
 --   pretty (Left x)  = nest 3 ( text "Left" <$> pretty x)
 --   pretty (Right y) = nest 3 ( text "Right" <$> pretty y)
 instance (Pretty a, Pretty b) =>
          Pretty (Either a b) where
-  pretty (Left x)  = text "Left" <$> pretty x
-  pretty (Right y) = text "Right" <$> pretty y
+  pretty (Left x)  = nest 5 (text "Left" <$> pretty x)
+  pretty (Right y) = nest 5 (text "Right" <$> pretty y)
 
 instance (Pretty a, Pretty b) =>
          Pretty (a, b) where
