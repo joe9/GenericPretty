@@ -83,7 +83,10 @@ instance (GPretty f, Selector c) =>
     | otherwise =
       if null components
         then []
-        else [nest prefixLength ( string (cs selector) <+> char '=' <+> cat components)]
+        else [ nest
+                 prefixLength
+                 (string (cs selector) <+> char '=' <+> cat components)
+             ]
     where
       selector = selName s
       components = gpretty a
@@ -92,14 +95,21 @@ instance (GPretty f, Selector c) =>
 --         | otherwise = Just PP.empty
 -- constructor
 -- here the real type and parens flag is set and propagated forward via t and n, the precedence factor is updated
+--         let prefixLength = (succ . succ . length . conName) c
+--         let prefixLength = (succ . succ . length . conName) c
+--         let prefixLength = 1
+--         in [nest prefixLength ( parens ((string . cs . conName) c <+> (align . sep) components))]
 instance (GPretty f, Constructor c) =>
          GPretty (M1 C c f) where
   gpretty c@(M1 a)
     | null components = [(string . cs . conName) c]
     | conIsRecord c =
-      [ (string . cs . conName) c <+>
-        (braces . align . fillSep . punctuate comma) components
-      ]
+      let prefixLength = 1
+      in [ nest
+             prefixLength
+             ((string . cs . conName) c <$>
+              (braces . nest 1 . fillSep . punctuate comma) components)
+         ]
     | otherwise =
       [parens ((string . cs . conName) c <+> (align . sep) components)]
     where
