@@ -94,6 +94,7 @@ main = do
   putText . Test.displayPrettyLen 30 $ tree
   putText . Test.displayPrettyLen 80 $ tree
   putText . Test.displayPrettyLen 80 $ animal1
+  putText . displayPrettyLen 80 $ animal1
   ( putText . cs . groom) animal1
 
 animal1 :: Animal1
