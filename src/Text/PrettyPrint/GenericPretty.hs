@@ -83,10 +83,11 @@ instance (GPretty f, Selector c) =>
     | otherwise =
       if null components
         then []
-        else [string (cs selector) <+> string "=" <+> cat components]
+        else [nest prefixLength ( string (cs selector) <+> char '=' <+> cat components)]
     where
       selector = selName s
-      components = fmap (nest (length selector + 3)) (gpretty a)
+      components = gpretty a
+      prefixLength = length selector + 3
 
 --         | otherwise = Just PP.empty
 -- constructor
