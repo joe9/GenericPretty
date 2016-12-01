@@ -32,10 +32,10 @@ module Text.PrettyPrint.GenericPretty
   ) where
 
 import qualified Data.HashMap.Strict
-import qualified Data.IntMap
+import qualified Data.IntMap.Strict
 import           Data.IxSet.Typed             (Indexable)
 import qualified Data.IxSet.Typed
-import qualified Data.Map
+import qualified Data.Map.Strict
 import           Data.String.Conversions      (cs)
 import qualified Data.Text                    as T
 import           Data.Text.Lazy               (Text, fromStrict)
@@ -222,16 +222,16 @@ instance (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) 
       [pretty a, pretty b, pretty c, pretty d, pretty e, pretty f, pretty g]
 
 instance (Pretty a, Pretty b) =>
-         Pretty (Data.Map.Map a b) where
-  pretty v = text "fromList" <+> (align . pretty) v
+         Pretty (Data.Map.Strict.Map a b) where
+  pretty v = text "fromList" <+> (pretty . Data.Map.Strict.toList) v
 
 instance (Pretty a) =>
-         Pretty (Data.IntMap.IntMap a) where
-  pretty v = text "fromList" <+> (align . pretty) v
+         Pretty (Data.IntMap.Strict.IntMap a) where
+  pretty v = text "fromList" <+> (pretty . Data.IntMap.Strict.toList) v
 
 instance (Pretty a, Pretty b) =>
          Pretty (Data.HashMap.Strict.HashMap a b) where
-  pretty v = text "fromList" <+> (align . pretty) v
+  pretty v = text "fromList" <+> (pretty . Data.HashMap.Strict.toList) v
 
 instance Pretty UTCTime where
   pretty = text . cs . formatTime defaultTimeLocale rfc822DateFormat
@@ -281,6 +281,11 @@ displayPrettyL
   :: Pretty a
   => a -> Text
 displayPrettyL = displayPrettyLenL 70
+
+-- displayPretty
+--   :: (Show a, Pretty a)
+--   => a -> T.Text
+-- displayPretty = toStrict . displayPrettyL . (\x -> trace ("calling displayPretty: " ++ show x) x)
 
 displayPretty
   :: Pretty a
