@@ -286,7 +286,6 @@ displayPrettyL = displayPrettyLenL 70
 --   :: (Show a, Pretty a)
 --   => a -> T.Text
 -- displayPretty = toStrict . displayPrettyL . (\x -> trace ("calling displayPretty: " ++ show x) x)
-
 displayPretty
   :: Pretty a
   => a -> T.Text

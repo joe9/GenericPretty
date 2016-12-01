@@ -12,17 +12,17 @@ module TestMarket
   , defaultRunner
   ) where
 
-import Protolude
-import           Data.String.Conversions      (cs)
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.IntMap.Strict  as IntMap
+import qualified Data.HashMap.Strict     as HashMap
+import qualified Data.IntMap.Strict      as IntMap
+import           Data.String.Conversions (cs)
 import           Data.Time
+import           Protolude
 
 import Text.PrettyPrint.GenericPretty
 
 import Betfair.APING                    hiding (Runner)
-import Betfair.APING.Types.PriceSize
 import Betfair.APING.Types.MarketStatus (MarketStatus (..))
+import Betfair.APING.Types.PriceSize
 import Betfair.APING.Types.RunnerStatus (RunnerStatus (ACTIVE))
 import Common.Types
 
@@ -63,9 +63,9 @@ testRunner =
   Runner
     ACTIVE
     1
-    ( IntMap.fromList [( 1,PriceSize 1.2 100),(2,PriceSize 1.1 200)])
-    ( IntMap.fromList [( 1,PriceSize 1.3 100),(2,PriceSize 1.4 200)])
-    ( HashMap.fromList [(1.1,200),(1.2,300)])
+    (IntMap.fromList [(1, PriceSize 1.2 100), (2, PriceSize 1.1 200)])
+    (IntMap.fromList [(1, PriceSize 1.3 100), (2, PriceSize 1.4 200)])
+    (HashMap.fromList [(1.1, 200), (1.2, 300)])
     "testRunner"
     10000
     1000
@@ -88,13 +88,25 @@ data Market = Market
 
 -- https://github.com/haskell/time/blob/52e0f5e85ffbaab77b155d48720fb216021c8a73/lib/Data/Time/Clock/POSIX.hs#L36
 unixEpoch :: UTCTime
-unixEpoch = UTCTime ( ModifiedJulianDay 40587) 0
+unixEpoch = UTCTime (ModifiedJulianDay 40587) 0
 
-showUTCTime :: FormatTime t => t -> Text
+showUTCTime
+  :: FormatTime t
+  => t -> Text
 showUTCTime = cs . formatTime defaultTimeLocale rfc822DateFormat
 
 defaultMarket :: Market
 defaultMarket = Market INACTIVE 0 HashMap.empty "" "" 0 unixEpoch "" Nothing
 
 testMarket :: Market
-testMarket = Market OPEN 1 ( HashMap.fromList [(1,testRunner)]) "market name" "event name" 100000 unixEpoch "1.99999999" (Just True)
+testMarket =
+  Market
+    OPEN
+    1
+    (HashMap.fromList [(1, testRunner)])
+    "market name"
+    "event name"
+    100000
+    unixEpoch
+    "1.99999999"
+    (Just True)
