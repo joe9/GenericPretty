@@ -9,6 +9,9 @@ import Data.String.Conversions (cs)
 import GHC.Base
 import GHC.Generics
 import Protolude               hiding (K1)
+import qualified Data.HashMap.Strict     as HashMap
+import qualified Data.IntMap.Strict      as IntMap
+import qualified Data.Map.Strict      as Map
 
 import Text.PrettyPrint.GenericPretty
 
@@ -78,3 +81,21 @@ data Animal1 = Animal1
   , aChar      :: Char
   , aBS        :: ByteString
   } deriving (Eq, Read, Show, Generic, Pretty)
+
+hashMapTest :: HashMap.HashMap Int Text
+hashMapTest = HashMap.fromList [(1, "10")]
+
+showAndReadHashMap :: HashMap.HashMap Int Text -> Either GHC.Base.String ( HashMap.HashMap Int Text)
+showAndReadHashMap = readEither . cs . displayPretty
+
+intMapTest :: IntMap.IntMap Text
+intMapTest = IntMap.fromList [(1, "10")]
+
+showAndReadIntMap :: IntMap.IntMap Text -> Either GHC.Base.String ( IntMap.IntMap Text)
+showAndReadIntMap = readEither . cs . displayPretty
+
+mapTest :: Map.Map Int Text
+mapTest = Map.fromList [(1, "10")]
+
+showAndReadMap :: Map.Map Int Text -> Either GHC.Base.String ( Map.Map Int Text)
+showAndReadMap = readEither . cs . displayPretty

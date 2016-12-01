@@ -120,7 +120,6 @@ test-suite GenericPretty-test
                        Product
                        K1
                        TestData
-                       TestMarket
   build-tools:       hsc2hs
   build-depends:       base
                      , protolude
@@ -130,7 +129,8 @@ test-suite GenericPretty-test
                      , tasty-quickcheck
                      , QuickCheck
                      , GenericPretty
-                     , betfair-api
+                     , containers
+                     , unordered-containers
   ghc-options:       -Wall -threaded -rtsopts -with-rtsopts=-N
   other-extensions: NoImplicitPrelude, OverloadedStrings
   default-language:    Haskell2010
