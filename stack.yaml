@@ -2,8 +2,5 @@ flags: {}
 extra-package-dbs: []
 packages:
 - '.'
-- location:
-    git: git@github.com:joe9/betfair-api.git
-    commit: a154e878468aa4c90a68c8e209ada80aa481689d
 extra-deps:
 resolver: nightly-2016-11-30
