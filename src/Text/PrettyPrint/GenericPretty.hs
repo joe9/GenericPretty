@@ -234,7 +234,9 @@ instance (Pretty a, Pretty b) =>
   pretty v = text "fromList" <+> (pretty . Data.HashMap.Strict.toList) v
 
 instance Pretty UTCTime where
-  pretty = text . cs . formatTime defaultTimeLocale rfc822DateFormat
+--   pretty = text . cs . formatTime defaultTimeLocale rfc822DateFormat
+-- though the above looks better, the below can be read back
+  pretty = text . cs . formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S %Z"
 
 instance (Show a, Indexable ixs a) =>
          Pretty (Data.IxSet.Typed.IxSet ixs a) where

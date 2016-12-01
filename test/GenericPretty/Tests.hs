@@ -37,6 +37,7 @@ tests =
     , testCase "testHashMap" testHashMap
     , testCase "testIntMap" testIntMap
     , testCase "testMap" testMap
+    , testCase "testUTCTime" testUTCTime
     ]
 
 testU1 :: Assertion
@@ -79,3 +80,7 @@ testIntMap =
 testMap :: Assertion
 testMap =
   TestData.showAndReadMap TestData.mapTest @?= Right TestData.mapTest
+
+testUTCTime :: Assertion
+testUTCTime =
+  TestData.showAndReadUTCTime TestData.utcTimeTest @?= Right TestData.utcTimeTest

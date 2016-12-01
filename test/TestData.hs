@@ -6,6 +6,7 @@
 module TestData where
 
 import Data.String.Conversions (cs)
+import Data.Time
 import GHC.Base
 import GHC.Generics
 import Protolude               hiding (K1)
@@ -99,3 +100,9 @@ mapTest = Map.fromList [(1, "10")]
 
 showAndReadMap :: Map.Map Int Text -> Either GHC.Base.String ( Map.Map Int Text)
 showAndReadMap = readEither . cs . displayPretty
+
+utcTimeTest :: UTCTime
+utcTimeTest = UTCTime (ModifiedJulianDay 40587) 0
+
+showAndReadUTCTime :: UTCTime -> Either GHC.Base.String UTCTime
+showAndReadUTCTime = readEither . cs . displayPretty

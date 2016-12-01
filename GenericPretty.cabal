@@ -131,6 +131,7 @@ test-suite GenericPretty-test
                      , GenericPretty
                      , containers
                      , unordered-containers
+                     , time
   ghc-options:       -Wall -threaded -rtsopts -with-rtsopts=-N
   other-extensions: NoImplicitPrelude, OverloadedStrings
   default-language:    Haskell2010
