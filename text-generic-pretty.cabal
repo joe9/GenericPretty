@@ -125,7 +125,7 @@ test-suite GenericPretty-test
                      , tasty-hunit
                      , tasty-quickcheck
                      , QuickCheck
-                     , GenericPretty
+                     , text-generic-pretty
                      , containers
                      , unordered-containers
                      , time
