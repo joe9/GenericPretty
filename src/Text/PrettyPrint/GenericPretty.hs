@@ -181,7 +181,8 @@ instance Pretty Doc where
 
 instance Pretty a =>
          Pretty [a] where
-  pretty = brackets . align . fillCat . punctuate comma . fmap pretty
+--   pretty = brackets . align . fillCat . punctuate comma . fmap pretty
+  pretty = PP.list . fmap pretty
 
 --   pretty (Just x) = nest 3 (text "Just" <$> pretty x)
 instance Pretty a =>
