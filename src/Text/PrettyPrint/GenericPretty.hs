@@ -176,6 +176,9 @@ instance Pretty Bool where
 instance Pretty ByteString where
   pretty = (pretty :: Text -> Doc) . cs
 
+instance Pretty Doc where
+  pretty = identity
+
 instance Pretty a =>
          Pretty [a] where
   pretty = brackets . align . fillCat . punctuate comma . fmap pretty
