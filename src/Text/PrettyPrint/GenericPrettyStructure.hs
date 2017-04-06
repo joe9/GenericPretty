@@ -51,9 +51,8 @@ class PrettyStructure a where
 --                os -> PP.list os
 --'GPrettyStructure' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
 -- so can't be an instance of 'PrettyStructure'
-class GPrettyStructure f
-      -- |'gprettyStructure' is the (*->*) kind equivalent of 'docPrec'
-                                                                        where
+-- |'gprettyStructure' is the (*->*) kind equivalent of 'docPrec'
+class GPrettyStructure f where
   gprettyStructure :: f x -> [Doc]
 
 -- if empty, output nothing, this is a null constructor

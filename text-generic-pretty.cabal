@@ -80,7 +80,11 @@ Cabal-version:       >=1.10
 
 Library
   -- Modules exported by the library.
-  Exposed-modules:     Text.PrettyPrint.GenericPretty Text.PrettyPrint.TestGenericPretty Text.PrettyPrint.GenericStructure Text.PrettyPrint.GenericPrettyStructure
+  Exposed-modules:     Text.PrettyPrint.GenericPretty
+--                        Below modules are only useful while debugging
+--                        Text.PrettyPrint.TestGenericPretty
+--                        Text.PrettyPrint.GenericStructure
+--                        Text.PrettyPrint.GenericPrettyStructure
 
   -- Packages needed in order to build this package.
   Build-depends:           base >= 3 && < 5
