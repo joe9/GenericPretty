@@ -173,8 +173,15 @@ instance Pretty Rational where
 instance Pretty Bool where
   pretty = bool
 
+-- I like the way how Protolude.show displays a bytestring
+-- This is easy to read and maps exactly to how
+-- http://www.asciitable.com/ shows the char
+-- "\NUL\NUL\NUL\ACKv0.0.1"
+-- using pretty . cs, it shows
+-- "v0.0.1"
 instance Pretty ByteString where
-  pretty = (pretty :: Text -> Doc) . cs
+--   pretty = (pretty :: Text -> Doc) . cs
+  pretty = (pretty :: Text -> Doc) . show
 
 instance Pretty Doc where
   pretty = identity
