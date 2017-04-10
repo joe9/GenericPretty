@@ -38,6 +38,7 @@ import qualified Data.IxSet.Typed
 import qualified Data.Map.Strict
 import           Data.String.Conversions      (cs)
 import qualified Data.Text                    as T
+import qualified Data.ByteString.Lazy                    as BSL
 import           Data.Text.Lazy               (Text, fromStrict)
 import           Data.Time
 import           GHC.Generics
@@ -181,7 +182,11 @@ instance Pretty Bool where
 -- "v0.0.1"
 instance Pretty ByteString where
 --   pretty = (pretty :: Text -> Doc) . cs
-  pretty = (pretty :: Text -> Doc) . show
+  pretty = string . show
+
+instance Pretty BSL.ByteString where
+--   pretty = (pretty :: Text -> Doc) . cs
+  pretty = string . show
 
 instance Pretty Doc where
   pretty = identity
@@ -251,7 +256,7 @@ instance Pretty UTCTime where
 
 instance (Show a, Indexable ixs a) =>
          Pretty (Data.IxSet.Typed.IxSet ixs a) where
-  pretty = text . show
+  pretty = string . show
 
 instance Pretty Word where
   pretty = (pretty :: Integer -> Doc) . fromIntegral
