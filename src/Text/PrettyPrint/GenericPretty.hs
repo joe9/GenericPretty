@@ -254,6 +254,11 @@ instance Pretty UTCTime where
 -- though the above looks better, the below can be read back
   pretty = text . cs . formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S %Z"
 
+instance Pretty Day where
+--   pretty = text . cs . formatTime defaultTimeLocale rfc822DateFormat
+-- though the above looks better, the below can be read back
+  pretty d = (text . cs . formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S %Z" . UTCTime d) (secondsToDiffTime 0)
+
 instance (Show a, Indexable ixs a) =>
          Pretty (Data.IxSet.Typed.IxSet ixs a) where
   pretty = string . show
