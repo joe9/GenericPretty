@@ -259,6 +259,9 @@ instance Pretty Day where
 -- though the above looks better, the below can be read back
   pretty d = (text . cs . formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S %Z" . UTCTime d) (secondsToDiffTime 0)
 
+instance Pretty DiffTime where
+  pretty = pretty . diffTimeToPicoseconds
+
 instance (Show a, Indexable ixs a) =>
          Pretty (Data.IxSet.Typed.IxSet ixs a) where
   pretty = string . show
