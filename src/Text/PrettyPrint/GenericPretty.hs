@@ -262,6 +262,9 @@ instance Pretty Day where
 instance Pretty DiffTime where
   pretty = pretty . diffTimeToPicoseconds
 
+instance Pretty NominalDiffTime where
+  pretty = string . show
+
 instance (Show a, Indexable ixs a) =>
          Pretty (Data.IxSet.Typed.IxSet ixs a) where
   pretty = string . show
