@@ -60,11 +60,10 @@ class Pretty a where
       (o:[]) -> o
       os     -> PP.list os
 
---'GPretty' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
+-- | 'GPretty' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
 -- so can't be an instance of 'Pretty'
-class GPretty f
-      -- |'gpretty' is the (*->*) kind equivalent of 'docPrec'
-                                                               where
+class GPretty f where
+  -- |'gpretty' is the (*->*) kind equivalent of 'docPrec'
   gpretty :: f x -> [Doc]
 
 -- if empty, output nothing, this is a null constructor
