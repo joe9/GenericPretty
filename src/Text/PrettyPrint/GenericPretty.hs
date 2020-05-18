@@ -39,13 +39,12 @@ import qualified Data.Map.Strict
 import           Data.String.Conversions      (cs)
 import qualified Data.Text                    as T
 import qualified Data.ByteString.Lazy                    as BSL
-import           Data.Text.Lazy               (Text, fromStrict)
+import           Data.Text.Lazy               (Text)
 import           Data.Time
 import           GHC.Generics
 import           Protolude                    hiding (Text, bool,
-                                               (<$>), (<>))
-import           Text.PrettyPrint.Leijen.Text hiding (Pretty (..),
-                                               (<>))
+                                               (<$>))
+import           Text.PrettyPrint.Leijen.Text hiding (Pretty (..))
 import qualified Text.PrettyPrint.Leijen.Text as PP
 
 -- | The class 'Pretty' is the equivalent of 'Prelude.Show'
@@ -61,11 +60,10 @@ class Pretty a where
       (o:[]) -> o
       os     -> PP.list os
 
---'GPretty' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
+-- | 'GPretty' is a helper class used to output the Sum-of-Products type, since it has kind *->*,
 -- so can't be an instance of 'Pretty'
-class GPretty f
-      -- |'gpretty' is the (*->*) kind equivalent of 'docPrec'
-                                                               where
+class GPretty f where
+  -- |'gpretty' is the (*->*) kind equivalent of 'docPrec'
   gpretty :: f x -> [Doc]
 
 -- if empty, output nothing, this is a null constructor
@@ -324,7 +322,7 @@ displayPrettyPrefixL
   :: (Pretty a, Pretty b)
   => a -> b -> Text
 displayPrettyPrefixL prefix =
-  PP.displayT . PP.renderPretty 1.0 70 . (PP.<>) (pretty prefix) . pretty
+  PP.displayT . PP.renderPretty 1.0 70 . (pretty prefix <>) . pretty
 
 displayPrettyPrefix
   :: (Pretty a, Pretty b)

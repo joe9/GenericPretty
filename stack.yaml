@@ -3,5 +3,6 @@ extra-package-dbs: []
 packages:
 - '.'
 extra-deps:
-resolver: nightly-2016-11-30
+- ixset-typed-0.5
+resolver: lts-15.13
 pvp-bounds: both
