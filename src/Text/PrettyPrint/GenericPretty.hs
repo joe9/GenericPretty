@@ -39,13 +39,12 @@ import qualified Data.Map.Strict
 import           Data.String.Conversions      (cs)
 import qualified Data.Text                    as T
 import qualified Data.ByteString.Lazy                    as BSL
-import           Data.Text.Lazy               (Text, fromStrict)
+import           Data.Text.Lazy               (Text)
 import           Data.Time
 import           GHC.Generics
 import           Protolude                    hiding (Text, bool,
-                                               (<$>), (<>))
-import           Text.PrettyPrint.Leijen.Text hiding (Pretty (..),
-                                               (<>))
+                                               (<$>))
+import           Text.PrettyPrint.Leijen.Text hiding (Pretty (..))
 import qualified Text.PrettyPrint.Leijen.Text as PP
 
 -- | The class 'Pretty' is the equivalent of 'Prelude.Show'
@@ -324,7 +323,7 @@ displayPrettyPrefixL
   :: (Pretty a, Pretty b)
   => a -> b -> Text
 displayPrettyPrefixL prefix =
-  PP.displayT . PP.renderPretty 1.0 70 . (PP.<>) (pretty prefix) . pretty
+  PP.displayT . PP.renderPretty 1.0 70 . (pretty prefix <>) . pretty
 
 displayPrettyPrefix
   :: (Pretty a, Pretty b)
